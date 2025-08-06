@@ -1,0 +1,76 @@
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  background: transparent;
+  color: #1c1c1c;
+  position: relative;
+}
+
+/* Prompt list layout */
+#promptList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-bottom: 36px;
+  padding-top: 20px; /* add this line */
+}
+
+
+/* Prompt cards */
+.prompt {
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;                /* Slightly smaller */
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.93);
+  border: 1px solid rgba(180, 180, 180, 0.25);
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  max-height: 200px;                /* Shorter cap */
+  min-height: 38px;                 /* Avoids jitter for very short prompts */
+}
+
+/* Optional fade if prompt is long */
+.prompt::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 42px; /* taller fade for more visible effect */
+  background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0.95) 50%, rgba(255,255,255,1));
+  pointer-events: none;
+  display: none;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+
+.prompt.long::after {
+  display: block;
+}
+
+.prompt:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04);
+}
+
+
+.fade-ellipsis {
+  position: absolute;
+  bottom: 8px;
+  right: 14px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #373737;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.7;
+}

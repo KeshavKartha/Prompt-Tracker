@@ -1,0 +1,27 @@
+{
+    "manifest_version": 3,
+    "name": "Prompt Tracker",
+    "version": "0.1",
+    "description": "Tracks and lists your prompts in ChatGPT conversations allowing you to easily navigate between prompts within a conversation.",
+    "permissions": ["storage", "scripting", "activeTab"],
+    "content_scripts": [
+        {
+            "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
+            "js": ["content.js"],
+            "run_at": "document_idle"
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": ["sidebar.html", "styles.css", "sidebar.js"],
+            "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"]
+        }
+    ],
+    "host_permissions": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+    ],
+    "action": {
+        "default_title": "Prompt Tracker"
+    }
+}
