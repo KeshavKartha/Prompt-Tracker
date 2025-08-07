@@ -78,16 +78,16 @@ function injectSidebar() {
     right: 16px;
     z-index: 10000;
     padding: 8px 12px;
-    background: ${isDarkModeForToggle ? 'rgba(64, 65, 79, 0.95)' : 'rgba(255, 255, 255, 0.95)'};
-    border: 1px solid ${isDarkModeForToggle ? 'rgba(86, 88, 105, 0.3)' : 'rgba(0, 0, 0, 0.1)'};
+    background: ${isDarkModeForToggle ? 'rgba(40, 40, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)'};
+    border: 1px solid ${isDarkModeForToggle ? 'rgba(80, 80, 80, 0.4)' : 'rgba(0, 0, 0, 0.1)'};
     border-radius: 12px;
-    box-shadow: 0 4px 12px ${isDarkModeForToggle ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.15)'};
+    box-shadow: 0 4px 12px ${isDarkModeForToggle ? 'rgba(0, 0, 0, 0.5)' : 'rgba(0, 0, 0, 0.15)'};
     cursor: pointer;
     backdrop-filter: blur(12px);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     display: flex;
     align-items: center;
-    color: ${isDarkModeForToggle ? '#d1d5db' : '#374151'};
+    color: ${isDarkModeForToggle ? '#e0e0e0' : '#374151'};
     transition: all 0.2s ease;
     user-select: none;
   `;
@@ -97,16 +97,16 @@ function injectSidebar() {
     const isDarkMode = isDarkModeActive();
     
     toggle.style.transform = "translateY(-1px)";
-    toggle.style.boxShadow = isDarkMode ? "0 6px 16px rgba(0, 0, 0, 0.5)" : "0 6px 16px rgba(0, 0, 0, 0.2)";
-    toggle.style.background = isDarkMode ? "rgba(64, 65, 79, 1)" : "rgba(255, 255, 255, 1)";
+    toggle.style.boxShadow = isDarkMode ? "0 6px 16px rgba(0, 0, 0, 0.6)" : "0 6px 16px rgba(0, 0, 0, 0.2)";
+    toggle.style.background = isDarkMode ? "rgba(40, 40, 40, 1)" : "rgba(255, 255, 255, 1)";
   });
   
   toggle.addEventListener("mouseleave", () => {
     const isDarkMode = isDarkModeActive();
     
     toggle.style.transform = "translateY(0)";
-    toggle.style.boxShadow = isDarkMode ? "0 4px 12px rgba(0, 0, 0, 0.4)" : "0 4px 12px rgba(0, 0, 0, 0.15)";
-    toggle.style.background = isDarkMode ? "rgba(64, 65, 79, 0.95)" : "rgba(255, 255, 255, 0.95)";
+    toggle.style.boxShadow = isDarkMode ? "0 4px 12px rgba(0, 0, 0, 0.5)" : "0 4px 12px rgba(0, 0, 0, 0.15)";
+    toggle.style.background = isDarkMode ? "rgba(40, 40, 40, 0.95)" : "rgba(255, 255, 255, 0.95)";
   });
 
   toggle.addEventListener("click", () => {
@@ -118,10 +118,10 @@ function injectSidebar() {
     
     // Update button appearance based on state
     if (isOpen) {
-      toggle.style.background = isDarkMode ? "rgba(64, 65, 79, 0.95)" : "rgba(255, 255, 255, 0.95)";
-      toggle.style.color = isDarkMode ? "#d1d5db" : "#374151";
+      toggle.style.background = isDarkMode ? "rgba(40, 40, 40, 0.95)" : "rgba(255, 255, 255, 0.95)";
+      toggle.style.color = isDarkMode ? "#e0e0e0" : "#374151";
     } else {
-      toggle.style.background = "rgba(59, 130, 246, 0.95)";
+      toggle.style.background = "rgba(80, 80, 80, 0.95)";
       toggle.style.color = "white";
     }
   });
@@ -145,7 +145,7 @@ function loadPromptsFromStorage(convoId) {
   });
 }
 
-const MAX_PREVIEW_CHARS = 500;
+const MAX_PREVIEW_CHARS = 300;
 
 function getSmartTrimmedText(text) {
   const trimmed = text.trim();
