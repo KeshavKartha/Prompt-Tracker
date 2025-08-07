@@ -1,3 +1,13 @@
+// ===== Helper: Check if dark mode is active =====
+function isDarkModeActive() {
+  return document.documentElement.classList.contains('dark') || 
+         document.body.classList.contains('dark-mode') ||
+         window.matchMedia('(prefers-color-scheme: dark)').matches ||
+         document.querySelector('html[data-theme="dark"]') ||
+         getComputedStyle(document.body).backgroundColor === 'rgb(33, 33, 33)' ||
+         getComputedStyle(document.body).backgroundColor === 'rgb(52, 53, 65)';
+}
+
 // ===== Helper: Get Current Conversation ID =====
 function getConversationId() {
   const parts = window.location.pathname.split('/');
@@ -26,41 +36,94 @@ function injectSidebar() {
   const iframe = document.createElement("iframe");
   iframe.id = "prompt-tracker-sidebar";
   iframe.src = chrome.runtime.getURL("sidebar.html");
+  
+  // Check if dark mode is active for iframe styling
+  const isDarkModeForIframe = isDarkModeActive();
+  
   iframe.style.cssText = `
     position: fixed;
     top: 0;
-    right: -320px; /* Start hidden */
-    width: 300px;
+    right: -380px; /* Start hidden, wider for better UX */
+    width: 360px;
     height: 100%;
     border: none;
     z-index: 9999;
     background: transparent;
     pointer-events: none;
-    transition: right 0.3s ease;
+    transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: ${isDarkModeForIframe ? '-4px 0 20px rgba(0, 0, 0, 0.6)' : '-4px 0 20px rgba(0, 0, 0, 0.1)'};
   `;
   document.body.appendChild(iframe);
 
   // Create toggle button
   const toggle = document.createElement("button");
   toggle.id = "prompt-sidebar-toggle";
-  toggle.textContent = "☰";
+  toggle.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 12l2 2 4-4"/>
+      <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1"/>
+      <path d="M3 12c-.552 0-1-.448-1-1s.448-1 1-1"/>
+      <path d="M12 3c0-.552.448-1 1-1s1 .448 1 1"/>
+      <path d="M12 21c0 .552-.448 1-1 1s-1-.448-1-1"/>
+      <circle cx="12" cy="12" r="9"/>
+    </svg>
+    <span style="margin-left: 6px; font-size: 12px; font-weight: 500;">Prompts</span>
+  `;
+  // Check if dark mode is active
+  const isDarkModeForToggle = isDarkModeActive();
+
   toggle.style.cssText = `
     position: fixed;
-    top: 12px;
-    right: 12px;
+    top: 64px;
+    right: 16px;
     z-index: 10000;
-    padding: 10px 14px;
-    background: rgba(255, 255, 255, 0.6);
-    border: none;
-    border-radius: 10px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    padding: 8px 12px;
+    background: ${isDarkModeForToggle ? 'rgba(64, 65, 79, 0.95)' : 'rgba(255, 255, 255, 0.95)'};
+    border: 1px solid ${isDarkModeForToggle ? 'rgba(86, 88, 105, 0.3)' : 'rgba(0, 0, 0, 0.1)'};
+    border-radius: 12px;
+    box-shadow: 0 4px 12px ${isDarkModeForToggle ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.15)'};
     cursor: pointer;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    display: flex;
+    align-items: center;
+    color: ${isDarkModeForToggle ? '#d1d5db' : '#374151'};
+    transition: all 0.2s ease;
+    user-select: none;
   `;
+  
+  // Add hover effects
+  toggle.addEventListener("mouseenter", () => {
+    const isDarkMode = isDarkModeActive();
+    
+    toggle.style.transform = "translateY(-1px)";
+    toggle.style.boxShadow = isDarkMode ? "0 6px 16px rgba(0, 0, 0, 0.5)" : "0 6px 16px rgba(0, 0, 0, 0.2)";
+    toggle.style.background = isDarkMode ? "rgba(64, 65, 79, 1)" : "rgba(255, 255, 255, 1)";
+  });
+  
+  toggle.addEventListener("mouseleave", () => {
+    const isDarkMode = isDarkModeActive();
+    
+    toggle.style.transform = "translateY(0)";
+    toggle.style.boxShadow = isDarkMode ? "0 4px 12px rgba(0, 0, 0, 0.4)" : "0 4px 12px rgba(0, 0, 0, 0.15)";
+    toggle.style.background = isDarkMode ? "rgba(64, 65, 79, 0.95)" : "rgba(255, 255, 255, 0.95)";
+  });
+
   toggle.addEventListener("click", () => {
+    const isDarkMode = isDarkModeActive();
+    
     const isOpen = iframe.style.right === "0px";
-    iframe.style.right = isOpen ? "-320px" : "0px";
+    iframe.style.right = isOpen ? "-380px" : "0px";
     iframe.style.pointerEvents = isOpen ? "none" : "auto";
+    
+    // Update button appearance based on state
+    if (isOpen) {
+      toggle.style.background = isDarkMode ? "rgba(64, 65, 79, 0.95)" : "rgba(255, 255, 255, 0.95)";
+      toggle.style.color = isDarkMode ? "#d1d5db" : "#374151";
+    } else {
+      toggle.style.background = "rgba(59, 130, 246, 0.95)";
+      toggle.style.color = "white";
+    }
   });
 
   document.body.appendChild(toggle);
@@ -121,6 +184,7 @@ const chatObserver = new MutationObserver(() => {
       newPromptData.push({
         id: promptId,
         text: getSmartTrimmedText(promptText),
+        fullText: promptText, // Store full text for copying
       });
     } else {
       // Already processed
