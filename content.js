@@ -188,6 +188,8 @@ const chatObserver = new MutationObserver(() => {
 
   if (convoId !== currentConversationId) {
     currentConversationId = convoId;
+    currentPrompts = []; // Clear prompts when switching conversations
+    postPromptsToSidebar([]); // Clear sidebar display
     loadPromptsFromStorage(convoId);
   }
 
@@ -276,6 +278,43 @@ const bodyObserver = new MutationObserver((mutations) => {
 });
 
 bodyObserver.observe(document.body, { childList: true, subtree: true });
+
+// ===== New Chat Detection =====
+document.addEventListener('click', (e) => {
+  // Check for new chat button clicks
+  const target = e.target;
+  const isNewChatButton = target.closest('a[href="/"]') || 
+                         target.closest('button[aria-label*="New chat"]') ||
+                         target.closest('[data-testid="new-chat"]') ||
+                         (target.textContent && target.textContent.trim().toLowerCase().includes('new chat'));
+  
+  if (isNewChatButton) {
+    // Clear current prompts immediately
+    currentPrompts = [];
+    currentConversationId = null;
+    postPromptsToSidebar([]);
+    console.log("🔄 New chat started - prompt history cleared");
+  }
+});
+
+// ===== URL Change Detection for New Chats =====
+let lastUrl = window.location.href;
+const urlObserver = new MutationObserver(() => {
+  const currentUrl = window.location.href;
+  if (currentUrl !== lastUrl) {
+    lastUrl = currentUrl;
+    
+    // If navigating to home page (new chat), clear prompts
+    if (currentUrl === 'https://chatgpt.com/' || currentUrl === 'https://chat.openai.com/') {
+      currentPrompts = [];
+      currentConversationId = null;
+      postPromptsToSidebar([]);
+      console.log("🔄 Navigated to new chat - prompt history cleared");
+    }
+  }
+});
+
+urlObserver.observe(document, { subtree: true, childList: true });
 
 
 window.addEventListener("message", (event) => {
