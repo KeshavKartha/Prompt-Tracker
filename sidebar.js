@@ -85,8 +85,11 @@ function updatePromptList(prompts) {
 
     // Add fade class if the original full text is long
     const originalFullText = prompt.fullText || prompt.text;
-    if (originalFullText.length > 150) {
-      promptCard.classList.add("long");
+    const contentElement = promptCard.querySelector('.prompt-content');
+    
+    // Check if content exceeds the max height by measuring actual content
+    if (originalFullText.length > 120) {
+      contentElement.classList.add("long");
     }
 
     // Copy button functionality

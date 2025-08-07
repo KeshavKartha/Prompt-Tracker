@@ -116,13 +116,36 @@ function injectSidebar() {
     iframe.style.right = isOpen ? "-380px" : "0px";
     iframe.style.pointerEvents = isOpen ? "none" : "auto";
     
-    // Update button appearance based on state
+    // Update button appearance and content based on state
     if (isOpen) {
+      // Sidebar is closing - show normal button
+      toggle.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 12l2 2 4-4"/>
+          <path d="M21 12c.552 0 1-.448 1-1s-.448-1-1-1"/>
+          <path d="M3 12c-.552 0-1-.448-1-1s.448-1 1-1"/>
+          <path d="M12 3c0-.552.448-1 1-1s1 .448 1 1"/>
+          <path d="M12 21c0 .552-.448 1-1 1s-1-.448-1-1"/>
+          <circle cx="12" cy="12" r="9"/>
+        </svg>
+        <span style="margin-left: 6px; font-size: 12px; font-weight: 500;">Prompts</span>
+      `;
       toggle.style.background = isDarkMode ? "rgba(40, 40, 40, 0.95)" : "rgba(255, 255, 255, 0.95)";
       toggle.style.color = isDarkMode ? "#e0e0e0" : "#374151";
+      toggle.style.top = "64px";
+      toggle.style.right = "16px";
     } else {
+      // Sidebar is opening - show close button
+      toggle.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      `;
       toggle.style.background = "rgba(80, 80, 80, 0.95)";
       toggle.style.color = "white";
+      toggle.style.top = "16px";
+      toggle.style.right = "24px";
     }
   });
 

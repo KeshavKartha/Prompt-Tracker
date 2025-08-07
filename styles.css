@@ -142,7 +142,7 @@ body {
   overflow: hidden;
   position: relative;
   min-height: 75px;
-  max-height: 160px;
+  max-height: 200px;
   display: flex;
   flex-direction: column;
 }
@@ -245,6 +245,7 @@ body {
   word-break: break-word;
   position: relative;
   min-height: 40px;
+  max-height: 150px;
   overflow: hidden;
   margin-bottom: 6px;
   display: block !important;
@@ -259,6 +260,17 @@ body {
   margin-right: 8px;
 }
 
+.prompt-content.long::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 1));
+  pointer-events: none;
+}
+
 @media (prefers-color-scheme: dark) {
   .prompt-content {
     color: #e0e0e0;
@@ -266,6 +278,10 @@ body {
   
   .prompt-content::before {
     color: #a0a0a0;
+  }
+  
+  .prompt-content.long::after {
+    background: linear-gradient(to bottom, transparent, rgba(40, 40, 40, 1));
   }
 }
 
