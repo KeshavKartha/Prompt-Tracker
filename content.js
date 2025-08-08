@@ -53,6 +53,9 @@ function generatePromptId() {
 /**
  * Injects the sidebar container and its associated styles into the page.
  */
+/**
+ * Injects the sidebar container and its associated styles into the page.
+ */
 function injectSidebar() {
   if (document.getElementById("prompt-tracker-sidebar")) return;
 
@@ -103,7 +106,6 @@ function injectSidebar() {
         background: rgba(${isDark ? '255,255,255,0.35' : '0,0,0,0.35'});
       }
       
-      /* --- MODIFIED RULE --- */
       #prompt-tracker-sidebar .sidebar-header {
         padding: 14px;
         border-bottom: none; 
@@ -114,10 +116,9 @@ function injectSidebar() {
         box-shadow: 0 2px 6px rgba(0,0,0,${isDark ? '0.1' : '0.05'});
       }
       
-      /* --- MODIFIED RULE --- */
       #prompt-tracker-sidebar .sidebar-header h3 { 
         margin: 0 0 4px 0;
-        font-size: 15px; 
+        font-size: 16px;
         font-weight: 600;
         color: ${isDark ? '#f0f0f0' : '#111827'};
       }
@@ -134,28 +135,31 @@ function injectSidebar() {
       #prompt-tracker-sidebar .empty-subtext { font-size: 12.5px; color: ${isDark ? '#6b7280' : '#9ca3af'}; margin-bottom: 16px; }
       #prompt-tracker-sidebar .empty-refresh-hint { font-size: 11.5px; color: ${isDark ? '#60a5fa' : '#3b82f6'}; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; padding: 8px 12px; margin-top: 12px; font-style: italic; }
 
-      #prompt-tracker-sidebar .prompt-card { background: rgba(${isDark ? '40,40,40,0.85' : '255,255,255,0.85'}); border: 1px solid rgba(${isDark ? '255,255,255,0.08' : '0,0,0,0.05'}); border-radius: 8px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,${isDark ? '0.2' : '0.08'}); cursor: pointer; transition: all 0.15s ease; overflow: hidden; position: relative; min-height: 80px; display: flex; flex-direction: column; flex-shrink: 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+      /* --- MODIFIED RULE --- */
+      #prompt-tracker-sidebar .prompt-card { background: rgba(${isDark ? '40,40,40,0.85' : '255,255,255,0.85'}); border: 1px solid rgba(${isDark ? '255,255,255,0.08' : '0,0,0,0.05'}); border-radius: 8px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,${isDark ? '0.2' : '0.08'}); cursor: pointer; transition: all 0.15s ease; overflow: hidden; position: relative; min-height: 25px; /* Changed from 80px */ display: flex; flex-direction: column; flex-shrink: 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+      
       #prompt-tracker-sidebar .prompt-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,${isDark ? '0.25' : '0.1'}); border-color: rgba(${isDark ? '255,255,255,0.12' : '0,0,0,0.08'}); background: rgba(${isDark ? '45,45,45,0.9' : '255,255,255,0.9'}); }
       
       #prompt-tracker-sidebar .prompt-content {
         font-family: 'Figtree', sans-serif;
-        font-size: 14px;
+        font-size: 13.5px;
         line-height: 1.5;
         color: ${isDark ? '#e0e0e0' : '#374151'};
         white-space: pre-wrap;
         word-break: break-word;
         position: relative;
-        min-height: 38px;
+        min-height: 20px;
         max-height: 100px;
         overflow: hidden;
       }
       
+      /* --- MODIFIED RULE --- */
       #prompt-tracker-sidebar .prompt-content.long {
-        max-height: 250px;
+        max-height: 115px; /* Changed from 250px */
       }
 
       #prompt-tracker-sidebar .prompt-content::before { content: attr(data-number) ". "; font-weight: 600; color: ${isDark ? '#a0a0a0' : '#888888'}; margin-right: 4px; }
-      #prompt-tracker-sidebar .prompt-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-top: auto; flex-shrink: 0; min-height: 28px; padding: 4px 2px 0 0; }
+      #prompt-tracker-sidebar .prompt-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-top: auto; flex-shrink: 0; min-height: 24px; padding: 4px 2px 0 0; }
       #prompt-tracker-sidebar .copy-btn { background: none; border: none; padding: 4px; border-radius: 4px; cursor: pointer; color: ${isDark ? '#a0a0a0' : '#6b7280'}; transition: all 0.15s ease; display: flex; align-items: center; justify-content: center; opacity: 0.7; }
       #prompt-tracker-sidebar .copy-btn:hover { background: rgba(${isDark ? '255,255,255,0.05' : '0,0,0,0.05'}); color: ${isDark ? '#e0e0e0' : '#374151'}; opacity: 1; }
       #prompt-tracker-sidebar .copy-toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 16px; border-radius: 8px; font-size: 12.5px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
@@ -179,7 +183,6 @@ function createToggleButton() {
   toggle.id = "prompt-sidebar-toggle";
   const isDark = isDarkModeActive();
   
-  // MODIFIED: Icon size increased from 18 to 19 for better presence.
   toggle.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z"></path><path d="M8 12.5L10.5 15L16 9"></path><path d="M12 2V3.5"></path><path d="M12 20.5V22"></path><path d="M22 12H20.5"></path><path d="M3.5 12H2"></path><path d="M4.92893 4.92893L5.99999 6"></path><path d="M18 18L19.0711 19.0711"></path><path d="M19.0711 4.92893L18 6"></path><path d="M6 18L4.92893 19.0711"></path></svg>`;
   
   toggle.style.cssText = `
@@ -211,10 +214,9 @@ function createToggleButton() {
 
     if (isOpen) {
       toggle.classList.remove('prompt-toggle-close');
-      // MODIFIED: Ensure the larger icon is also used when the sidebar is closed.
       toggle.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z"></path><path d="M8 12.5L10.5 15L16 9"></path><path d="M12 2V3.5"></path><path d="M12 20.5V22"></path><path d="M22 12H20.5"></path><path d="M3.5 12H2"></path><path d="M4.92893 4.92893L5.99999 6"></path><path d="M18 18L19.0711 19.0711"></path><path d="M19.0711 4.92893L18 6"></path><path d="M6 18L4.92893 19.0711"></path></svg>`;
-      toggle.style.top = "54px";
-      toggle.style.right = "20px";
+      toggle.style.top = "57px";
+      toggle.style.right = "22px";
       toggle.style.width = "38px";
       toggle.style.height = "38px";
       toggle.style.padding = "10px";
@@ -376,8 +378,18 @@ function checkForNewPrompts() {
   const convoId = getConversationId();
   if (!convoId) {
       if (currentConversationId !== null) {
+          // Capture the ID of the conversation we are leaving.
+          const oldConvoId = currentConversationId;
+          
+          // Reset the internal state.
           currentConversationId = null;
           currentPrompts = [];
+
+          // *** FIX: Explicitly remove the old conversation's data from storage. ***
+          chrome.storage.local.remove([oldConvoId], () => {
+              console.log(`Prompt Tracker: Cleaned up storage for deleted conversation: ${oldConvoId}`);
+          });
+          
           const sidebar = document.getElementById("prompt-tracker-sidebar");
           if (sidebar?.updatePromptsDisplay) sidebar.updatePromptsDisplay([]);
       }
@@ -429,37 +441,28 @@ function checkAndApplyResponsiveLogic() {
     const sidebar = document.getElementById('prompt-tracker-sidebar');
     const toggle = document.getElementById('prompt-sidebar-toggle');
     
-    // --- NEW, DIRECT SELECTOR ---
-    // Select the main text input container you identified. Its width will be our metric.
     const mainContent = document.querySelector('div[class*="rounded-[28px]"]');
 
     if (!sidebar || !toggle || !mainContent) {
-        return; // Exit if critical elements aren't found yet.
+        return;
     }
 
     const mainContentWidth = mainContent.offsetWidth;
     let newSidebarWidth = sidebarDefaultWidth;
 
-    // State 1: Content area is very narrow. Hide the sidebar and its toggle.
     if (mainContentWidth < 650) {
         sidebar.style.display = 'none';
         toggle.style.display = 'none';
-        return; // Stop execution.
+        return;
     }
     
-    // If not in the narrowest state, ensure the elements can be displayed.
     sidebar.style.display = 'block';
     toggle.style.display = 'flex';
  
-    // State 2 (Implicit else): Content area is wide, so use the default sidebar width.
-
-    // Apply the determined width.
     sidebar.style.width = newSidebarWidth + 'px';
 
-    // Update the "hidden" position based on the new width.
     sidebarHiddenRightPos = `-${newSidebarWidth + 20}px`;
 
-    // If the sidebar is closed, ensure its hidden position is correct for the new width.
     const isOpen = sidebar.style.right === "15px";
     if (!isOpen) {
         sidebar.style.right = sidebarHiddenRightPos;
@@ -485,7 +488,6 @@ function main() {
   injectSidebar();
   startObservers();
   
-  // Create a single debounced function to handle resize and zoom events.
   const debouncedResizeCheck = () => {
     setTimeout(checkAndApplyResponsiveLogic, 100);
   };
@@ -497,7 +499,6 @@ function main() {
     }
   });
   
-  // Initial check after the page has had time to load fully.
   setTimeout(() => {
     checkForNewPrompts();
     checkAndApplyResponsiveLogic();
