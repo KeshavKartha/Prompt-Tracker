@@ -480,12 +480,13 @@ function injectSidebar() {
 
   document.body.appendChild(sidebar);
 
-  // Add click-outside-to-close functionality (only if not already added)
-  if (!document.hasClickOutsideListener) {
-    document.addEventListener('click', (e) => {
+  // Add click-outside-to-close functionality (ensure single listener)
+  if (!window.promptTrackerClickListener) {
+    const clickOutsideHandler = (e) => {
       const sidebar = document.getElementById("prompt-tracker-sidebar");
       const toggleButton = document.getElementById("prompt-sidebar-toggle");
       const backupToggle = document.getElementById("prompt-sidebar-toggle-nav");
+      const darkModeToggle = document.getElementById("darkModeToggle");
       
       // Check if sidebar is open
       if (sidebar && sidebar.style.right === "0px") {
@@ -493,9 +494,18 @@ function injectSidebar() {
         const clickedOnSidebar = sidebar.contains(e.target);
         const clickedOnMainToggle = toggleButton?.contains(e.target);
         const clickedOnBackupToggle = backupToggle?.contains(e.target);
+        const clickedOnDarkModeToggle = darkModeToggle?.contains(e.target);
         const clickedOnToggleButton = clickedOnMainToggle || clickedOnBackupToggle;
         
-        if (!clickedOnSidebar && !clickedOnToggleButton) {
+        // Additional check: make sure the click target is not any toggle button
+        const isToggleButtonElement = e.target.id === "prompt-sidebar-toggle" || 
+                                    e.target.id === "prompt-sidebar-toggle-nav" ||
+                                    e.target.id === "darkModeToggle" ||
+                                    e.target.closest("#prompt-sidebar-toggle") ||
+                                    e.target.closest("#prompt-sidebar-toggle-nav") ||
+                                    e.target.closest("#darkModeToggle");
+        
+        if (!clickedOnSidebar && !clickedOnToggleButton && !clickedOnDarkModeToggle && !isToggleButtonElement) {
           // Close the sidebar
           sidebar.style.right = "-323px";
           sidebar.style.pointerEvents = "none";
@@ -508,8 +518,10 @@ function injectSidebar() {
           }
         }
       }
-    });
-    document.hasClickOutsideListener = true;
+    };
+    
+    document.addEventListener('click', clickOutsideHandler);
+    window.promptTrackerClickListener = clickOutsideHandler;
   }
 
   // Load and initialize the sidebar functionality
@@ -717,7 +729,13 @@ function loadSidebarScript(sidebar) {
   }
   
   if (darkModeToggle) {
-    darkModeToggle.addEventListener('click', () => {
+    darkModeToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation(); // Prevent any event bubbling
+      
+      console.log("Dark mode toggle clicked - preventing sidebar close");
+      
       isDarkMode = !isDarkMode;
       
       // Update sidebar classes
@@ -823,6 +841,12 @@ function createToggleButton() {
   if (existingToggle) {
     existingToggle.remove();
   }
+  
+  // Remove existing backup toggle if present
+  const existingNavToggle = document.getElementById("prompt-sidebar-toggle-nav");
+  if (existingNavToggle) {
+    existingNavToggle.remove();
+  }
 
   console.log("Creating toggle button...");
   
@@ -873,36 +897,45 @@ function createToggleButton() {
   `;
   
   toggle.addEventListener("click", (e) => {
-    e.stopPropagation(); // Prevent click from bubbling to document
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation(); // Stop all event propagation
     
-    const sidebar = document.getElementById("prompt-tracker-sidebar");
+    console.log("Main toggle button clicked - preventing all propagation");
     
-    // Check if sidebar exists before trying to access its properties
-    if (!sidebar) {
-      console.error("Sidebar not found! Attempting to recreate...");
-      // Try to recreate the sidebar
-      injectSidebar();
-      return;
-    }
-    
-    const isOpen = sidebar.style.right === "0px";
-    console.log("Toggle clicked, sidebar isOpen:", isOpen);
-    
-    // Only open the sidebar if it's closed, don't close it
-    if (!isOpen) {
-      console.log("Opening sidebar...");
-      sidebar.style.right = "0px";
-      sidebar.style.pointerEvents = "auto";
+    // Add a small delay to ensure this event is fully processed before any other events
+    setTimeout(() => {
+      const sidebar = document.getElementById("prompt-tracker-sidebar");
       
-      // Hide the toggle button when sidebar opens
-      toggle.style.opacity = "0";
-      toggle.style.visibility = "hidden";
-      toggle.style.pointerEvents = "none";
-    } else {
-      console.log("Sidebar already open, ignoring click");
-    }
-    // If sidebar is already open, do nothing (don't close it)
-  });
+      // Check if sidebar exists before trying to access its properties
+      if (!sidebar) {
+        console.error("Sidebar not found! Attempting to recreate...");
+        // Try to recreate the sidebar
+        injectSidebar();
+        return;
+      }
+      
+      const isOpen = sidebar.style.right === "0px";
+      console.log("Toggle clicked, sidebar isOpen:", isOpen);
+      
+      // Only open the sidebar if it's closed, don't close it
+      if (!isOpen) {
+        console.log("Opening sidebar...");
+        sidebar.style.right = "0px";
+        sidebar.style.pointerEvents = "auto";
+        
+        // Hide the toggle button when sidebar opens
+        toggle.style.opacity = "0";
+        toggle.style.visibility = "hidden";
+        toggle.style.pointerEvents = "none";
+      } else {
+        console.log("Sidebar already open, ignoring click");
+      }
+      // If sidebar is already open, do nothing (don't close it)
+    }, 0);
+    
+    return false; // Additional prevention
+  }, true); // Use capture phase
 
   document.body.appendChild(toggle);
   
@@ -920,7 +953,11 @@ function createToggleButton() {
     
     // Add the same click event handler to backup button
     navToggle.addEventListener("click", (e) => {
-      e.stopPropagation(); // Prevent click from bubbling to document
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation(); // Stop all event propagation
+      
+      console.log("Backup toggle button clicked - preventing all propagation");
       
       const sidebar = document.getElementById("prompt-tracker-sidebar");
       
@@ -952,7 +989,9 @@ function createToggleButton() {
         console.log("Sidebar already open, ignoring backup click");
       }
       // If sidebar is already open, do nothing (don't close it)
-    });
+      
+      return false; // Additional prevention
+    }, true); // Use capture phase
     
     navContainer.appendChild(navToggle);
     console.log("Backup button created in nav");
