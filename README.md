@@ -4,10 +4,10 @@ A Chrome extension that tracks and displays your prompts in ChatGPT conversation
 
 ### Design Principles
 
--Minimalist
--Clean
--Non-Intrusive
--Performant
+- **Minimalist**
+- **Clean**
+- **Non-Intrusive**
+- **Performant**
 
 ## Features
 
