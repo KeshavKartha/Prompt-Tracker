@@ -58,8 +58,8 @@ function injectSidebar() {
   sidebar.style.cssText = `
     position: fixed;
     top: 0;
-    right: -380px; /* Start hidden, wider for better UX */
-    width: 360px;
+    right: -323px; /* Start hidden, narrower by 1.5cm */
+    width: 303px;
     height: 100%;
     background: transparent;
     border: none;
@@ -140,6 +140,13 @@ function injectSidebar() {
         text-align: center;
         padding: 40px 20px;
         color: ${isDarkModeForSidebar ? '#9ca3af' : '#6b7280'};
+        background: rgba(30, 30, 30, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        margin: 0 12px;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
       }
 
       #prompt-tracker-sidebar .empty-icon {
@@ -158,6 +165,18 @@ function injectSidebar() {
       #prompt-tracker-sidebar .empty-subtext {
         font-size: 13px;
         color: ${isDarkModeForSidebar ? '#6b7280' : '#9ca3af'};
+        margin-bottom: 16px;
+      }
+
+      #prompt-tracker-sidebar .empty-refresh-hint {
+        font-size: 12px;
+        color: ${isDarkModeForSidebar ? '#60a5fa' : '#3b82f6'};
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 6px;
+        padding: 8px 12px;
+        margin-top: 12px;
+        font-style: italic;
       }
 
       /* Prompt cards */
@@ -229,7 +248,7 @@ function injectSidebar() {
         align-items: center;
         gap: 6px;
         margin-top: auto;
-        margin-bottom: 4px;
+        margin-bottom: 1px;
         flex-shrink: 0;
         min-height: 32px;
         padding-top: 4px;
@@ -310,6 +329,17 @@ function injectSidebar() {
         align-items: center;
         gap: 6px;
       }
+
+      /* Prompt highlight animation */
+      .prompt-highlight {
+        animation: promptPulse 0.6s ease-in-out;
+      }
+
+      @keyframes promptPulse {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+        50% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0.2); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+      }
     `;
     document.head.appendChild(style);
   }
@@ -342,6 +372,7 @@ function loadSidebarScript(sidebar) {
           <div class="empty-icon">💭</div>
           <div class="empty-text">No prompts yet</div>
           <div class="empty-subtext">Start a conversation to see your prompts here</div>
+          <div class="empty-refresh-hint">💡 If you have prompts but they're not showing, try refreshing the page</div>
         </div>
       `;
       return;
@@ -357,8 +388,12 @@ function loadSidebarScript(sidebar) {
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
           </button>
-          <button class="jump-btn" title="Jump to prompt" data-prompt-id="${prompt.id}">
-            ↗ Jump
+          <button class="jump-btn" title="Jump to prompt" data-target-prompt="${prompt.id}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m3 3 3 9-3 9 19-9Z"></path>
+              <path d="m6 12 13 0"></path>
+            </svg>
+            Jump
           </button>
         </div>
       </div>
@@ -378,7 +413,7 @@ function loadSidebarScript(sidebar) {
     sidebar.querySelectorAll('.jump-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const promptId = btn.dataset.promptId;
+        const promptId = btn.dataset.targetPrompt;
         jumpToPrompt(promptId);
       });
     });
@@ -395,14 +430,140 @@ function loadSidebarScript(sidebar) {
 
   // Function to jump to prompt
   function jumpToPrompt(promptId) {
-    const promptElement = document.querySelector(`[data-prompt-id="${promptId}"]`);
+    console.log('=== JUMP TO PROMPT DEBUG ===');
+    console.log('Target prompt ID:', promptId);
+    
+    // Debug: Check what elements exist (excluding our own buttons)
+    const allElementsWithId = document.querySelectorAll('[data-prompt-id]:not(.jump-btn):not(button)');
+    console.log('Total message elements with data-prompt-id:', allElementsWithId.length);
+    allElementsWithId.forEach((el, i) => {
+      console.log(`Message ${i}: ID=${el.dataset.promptId}, text=${el.innerText.substring(0, 50)}...`);
+    });
+    
+    // Check if we have the current prompts in memory
+    console.log('Current prompts in memory:', currentPrompts.length);
+    const targetPrompt = currentPrompts.find(p => p.id === promptId);
+    console.log('Target prompt in memory:', targetPrompt ? `Found: ${targetPrompt.content.substring(0, 50)}...` : 'Not found');
+    
+    // First try to find by data-prompt-id attribute, but exclude our own buttons
+    let promptElement = document.querySelector(`[data-prompt-id="${promptId}"]:not(.jump-btn):not(button)`);
+    console.log('Found by data-prompt-id (excluding buttons):', !!promptElement);
+    
+    // If not found, try to find in the promptIdMap
+    if (!promptElement) {
+      console.log('Element not found by data-prompt-id, searching through all messages...');
+      
+      // Look through all user messages to find the one with matching ID
+      const userMessages = document.querySelectorAll('div[data-message-author-role="user"]');
+      console.log('Total user messages found:', userMessages.length);
+      
+      for (const msg of userMessages) {
+        const msgId = promptIdMap.get(msg) || msg.dataset.promptId;
+        if (msgId === promptId) {
+          promptElement = msg;
+          console.log('Found in user messages by WeakMap/dataset');
+          break;
+        }
+      }
+      
+      // If still not found, try alternative selectors and text matching
+      if (!promptElement && targetPrompt) {
+        console.log('Trying text matching as fallback...');
+        const allMessages = document.querySelectorAll('div[data-message-author-role="user"], div[class*="group"], div[class*="conversation-turn"]');
+        
+        for (const msg of allMessages) {
+          const msgText = msg.innerText.trim();
+          // Check if text content matches (first 100 chars for comparison)
+          if (msgText && targetPrompt.content && 
+              msgText.substring(0, 100) === targetPrompt.content.substring(0, 100)) {
+            promptElement = msg;
+            console.log('Found by text matching!');
+            // Update the element with the correct ID for future use
+            msg.dataset.promptId = promptId;
+            promptIdMap.set(msg, promptId);
+            break;
+          }
+        }
+      }
+    }
+    
     if (promptElement) {
-      promptElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      promptElement.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+      console.log('SUCCESS: Found prompt element, scrolling and highlighting');
+      
+      // Remove any existing highlights
+      document.querySelectorAll('.prompt-highlight').forEach(el => {
+        el.classList.remove('prompt-highlight');
+        el.style.backgroundColor = '';
+        el.style.border = '';
+        el.style.borderRadius = '';
+      });
+      
+      // Scroll to the element
+      promptElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center',
+        inline: 'nearest'
+      });
+      
+      // Add highlight class and temporary highlighting
+      promptElement.classList.add('prompt-highlight');
+      promptElement.style.backgroundColor = 'rgba(59, 130, 246, 0.15)';
+      promptElement.style.border = '2px solid rgba(59, 130, 246, 0.5)';
+      promptElement.style.borderRadius = '8px';
+      promptElement.style.transition = 'all 0.3s ease';
+      
+      // Remove highlighting after 3 seconds
       setTimeout(() => {
         promptElement.style.backgroundColor = '';
-      }, 2000);
+        promptElement.style.border = '';
+        promptElement.style.borderRadius = '';
+        promptElement.classList.remove('prompt-highlight');
+      }, 3000);
+      
+      // Close sidebar after jumping
+      const sidebar = document.getElementById("prompt-tracker-sidebar");
+      if (sidebar) {
+        sidebar.style.right = "-323px";
+        sidebar.style.pointerEvents = "none";
+        
+        // Update toggle button to normal state
+        const toggle = document.getElementById("prompt-sidebar-toggle");
+        if (toggle) {
+          const isDarkMode = isDarkModeActive();
+          toggle.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3h18v18H3z"/>
+              <path d="M8 7h8"/>
+              <path d="M8 11h8"/>
+              <path d="M8 15h5"/>
+            </svg>
+          `;
+          toggle.style.background = isDarkMode ? "rgba(40, 40, 40, 0.95)" : "rgba(255, 255, 255, 0.95)";
+          toggle.style.color = isDarkMode ? "#e0e0e0" : "#374151";
+          toggle.style.top = "64px";
+          toggle.style.right = "16px";
+          toggle.style.width = "40px";
+          toggle.style.height = "40px";
+          toggle.style.borderRadius = "50%";
+          toggle.style.padding = "10px";
+        }
+      }
+    } else {
+      console.error('FAILED: Prompt element not found for ID:', promptId);
+      console.log('=== END JUMP DEBUG ===');
+      
+      // Force re-scan of prompts to update IDs
+      const convoId = getConversationId();
+      if (convoId) {
+        console.log('Re-scanning prompts to update IDs...');
+        // Trigger the mutation observer manually by dispatching a custom DOM change
+        const tempDiv = document.createElement('div');
+        document.body.appendChild(tempDiv);
+        document.body.removeChild(tempDiv);
+      }
     }
+    
+    console.log('=== END JUMP DEBUG ===');
   }
 
   // Store reference for updating
@@ -429,6 +590,14 @@ function createToggleButton() {
   }
 
   console.log("Creating toggle button...");
+  
+  // Ensure sidebar exists before creating button
+  const sidebar = document.getElementById("prompt-tracker-sidebar");
+  if (!sidebar) {
+    console.log("Sidebar not found, creating it first...");
+    injectSidebar();
+    return; // injectSidebar will call createToggleButton again
+  }
 
   // Create toggle button
   const toggle = document.createElement("button");
@@ -491,8 +660,16 @@ function createToggleButton() {
     const isDarkMode = isDarkModeActive();
     const sidebar = document.getElementById("prompt-tracker-sidebar");
     
+    // Check if sidebar exists before trying to access its properties
+    if (!sidebar) {
+      console.error("Sidebar not found! Attempting to recreate...");
+      // Try to recreate the sidebar
+      injectSidebar();
+      return;
+    }
+    
     const isOpen = sidebar.style.right === "0px";
-    sidebar.style.right = isOpen ? "-380px" : "0px";
+    sidebar.style.right = isOpen ? "-323px" : "0px";
     sidebar.style.pointerEvents = isOpen ? "none" : "auto";
     
     // Update button appearance and content based on state
@@ -555,6 +732,37 @@ function createToggleButton() {
     const navToggle = toggle.cloneNode(true);
     navToggle.id = 'prompt-sidebar-toggle-nav';
     navToggle.style.display = 'none'; // Hidden backup
+    
+    // Add the same click event handler to backup button
+    navToggle.addEventListener("click", () => {
+      const isDarkMode = isDarkModeActive();
+      const sidebar = document.getElementById("prompt-tracker-sidebar");
+      
+      // Check if sidebar exists before trying to access its properties
+      if (!sidebar) {
+        console.error("Sidebar not found! Attempting to recreate...");
+        // Try to recreate the sidebar
+        injectSidebar();
+        return;
+      }
+      
+      const isOpen = sidebar.style.right === "0px";
+      sidebar.style.right = isOpen ? "-323px" : "0px";
+      sidebar.style.pointerEvents = isOpen ? "none" : "auto";
+      
+      // Update button appearance (abbreviated for backup button)
+      if (isOpen) {
+        navToggle.innerHTML = toggle.innerHTML; // Copy main button content
+      } else {
+        navToggle.innerHTML = `
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        `;
+      }
+    });
+    
     navContainer.appendChild(navToggle);
     console.log("Backup button created in nav");
   }
@@ -563,6 +771,8 @@ function createToggleButton() {
   setTimeout(() => {
     const checkButton = () => {
       const buttonExists = document.getElementById("prompt-sidebar-toggle");
+      const sidebarExists = document.getElementById("prompt-tracker-sidebar");
+      
       if (!buttonExists) {
         console.log("Toggle button disappeared, recreating...");
         
@@ -575,7 +785,14 @@ function createToggleButton() {
         } else {
           createToggleButton();
         }
-      } else {
+      }
+      
+      if (!sidebarExists) {
+        console.log("Sidebar disappeared, recreating...");
+        injectSidebar();
+      }
+      
+      if (buttonExists || sidebarExists) {
         // Schedule next check
         setTimeout(checkButton, 5000);
       }
@@ -590,9 +807,16 @@ injectSidebar();
 // Watch for DOM changes that might remove our button
 const buttonObserver = new MutationObserver(() => {
   const button = document.getElementById("prompt-sidebar-toggle");
+  const sidebar = document.getElementById("prompt-tracker-sidebar");
+  
   if (!button) {
     console.log("Button removed by DOM changes, recreating...");
     createToggleButton();
+  }
+  
+  if (!sidebar) {
+    console.log("Sidebar removed by DOM changes, recreating...");
+    injectSidebar();
   }
 });
 
@@ -602,7 +826,7 @@ buttonObserver.observe(document.body, {
   subtree: true
 });
 
-console.log("Button observer started");
+console.log("Button and sidebar observer started");
 
 // ===== Prompt Tracking =====
 let currentPrompts = [];
@@ -714,7 +938,74 @@ const chatObserver = new MutationObserver(() => {
 const chatContainer = document.querySelector("main");
 if (chatContainer) {
   chatObserver.observe(chatContainer, { childList: true, subtree: true });
+  console.log("Chat observer started");
 }
+
+// ===== URL Change Observer for Conversation Switching =====
+let lastUrl = window.location.href;
+console.log("Initial URL:", lastUrl);
+console.log("Initial conversation ID:", getConversationId());
+
+// Check for URL changes (conversation switching)
+const urlObserver = new MutationObserver(() => {
+  const currentUrl = window.location.href;
+  if (currentUrl !== lastUrl) {
+    console.log("URL changed from:", lastUrl, "to:", currentUrl);
+    lastUrl = currentUrl;
+    
+    const newConvoId = getConversationId();
+    console.log("New conversation ID:", newConvoId);
+    
+    if (newConvoId !== currentConversationId) {
+      console.log("Conversation changed! Switching from", currentConversationId, "to", newConvoId);
+      currentConversationId = newConvoId;
+      currentPrompts = [];
+      postPromptsToSidebar([]);
+      
+      if (newConvoId) {
+        loadPromptsFromStorage(newConvoId);
+      }
+    }
+  }
+});
+
+// Observe document changes that might indicate navigation
+urlObserver.observe(document, { subtree: true, childList: true });
+
+// Also listen for popstate events (back/forward navigation)
+window.addEventListener('popstate', () => {
+  console.log("Popstate event detected");
+  setTimeout(() => {
+    const newConvoId = getConversationId();
+    console.log("Popstate - New conversation ID:", newConvoId);
+    
+    if (newConvoId !== currentConversationId) {
+      console.log("Popstate - Conversation changed!");
+      currentConversationId = newConvoId;
+      currentPrompts = [];
+      postPromptsToSidebar([]);
+      
+      if (newConvoId) {
+        loadPromptsFromStorage(newConvoId);
+      }
+    }
+  }, 100); // Small delay to ensure URL has changed
+});
+
+// Check for conversation changes every 2 seconds as backup
+setInterval(() => {
+  const currentConvoId = getConversationId();
+  if (currentConvoId !== currentConversationId) {
+    console.log("Interval check - Conversation changed from", currentConversationId, "to", currentConvoId);
+    currentConversationId = currentConvoId;
+    currentPrompts = [];
+    postPromptsToSidebar([]);
+    
+    if (currentConvoId) {
+      loadPromptsFromStorage(currentConvoId);
+    }
+  }
+}, 2000);
 
 // Add a manual trigger for debugging - run the observer once on load
 setTimeout(() => {
@@ -896,26 +1187,6 @@ document.addEventListener('click', (e) => {
     console.log("🔄 New chat started - prompt history cleared");
   }
 });
-
-// ===== URL Change Detection for New Chats =====
-let lastUrl = window.location.href;
-const urlObserver = new MutationObserver(() => {
-  const currentUrl = window.location.href;
-  if (currentUrl !== lastUrl) {
-    lastUrl = currentUrl;
-    
-    // If navigating to home page (new chat), clear prompts
-    if (currentUrl === 'https://chatgpt.com/' || currentUrl === 'https://chat.openai.com/') {
-      currentPrompts = [];
-      currentConversationId = null;
-      postPromptsToSidebar([]);
-      console.log("🔄 Navigated to new chat - prompt history cleared");
-    }
-  }
-});
-
-urlObserver.observe(document, { subtree: true, childList: true });
-
 
 window.addEventListener("message", (event) => {
   if (event.data?.type === "JUMP_TO_PROMPT") {
