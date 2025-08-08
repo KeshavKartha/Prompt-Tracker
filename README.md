@@ -2,7 +2,7 @@
 
 A Chrome extension that tracks and displays your prompts in ChatGPT conversations, making it easy to navigate and copy previous prompts.
 
-### Design Principles
+## Design Principles
 
 - **Minimalist**
 - **Clean**
