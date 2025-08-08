@@ -277,30 +277,6 @@ function injectSidebar() {
         opacity: 1;
       }
 
-      #prompt-tracker-sidebar .jump-btn {
-        background: rgba(160, 160, 160, 0.1);
-        border: 1px solid rgba(160, 160, 160, 0.2);
-        color: ${isDarkModeForSidebar ? '#cccccc' : '#555555'};
-        padding: 5px 8px;
-        border-radius: 4px;
-        font-size: 10px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.15s ease;
-        display: flex;
-        align-items: center;
-        gap: 2px;
-        min-height: 28px;
-        white-space: nowrap;
-        flex-shrink: 0;
-      }
-
-      #prompt-tracker-sidebar .jump-btn:hover {
-        background: rgba(160, 160, 160, 0.15);
-        border-color: rgba(160, 160, 160, 0.3);
-        transform: translateY(-0.5px);
-      }
-
       /* Copy toast notification */
       #prompt-tracker-sidebar .copy-toast {
         position: fixed;
@@ -379,7 +355,7 @@ function loadSidebarScript(sidebar) {
     }
 
     promptList.innerHTML = prompts.map((prompt, index) => `
-      <div class="prompt-card ${prompt.content.length > 200 ? 'long' : ''}" data-id="${prompt.id}">
+      <div class="prompt-card ${prompt.content.length > 200 ? 'long' : ''}" data-id="${prompt.id}" data-target-prompt="${prompt.id}" style="cursor: pointer;" title="Click to jump to this prompt">
         <div class="prompt-content" data-number="${index + 1}">${prompt.content}</div>
         <div class="prompt-actions">
           <button class="copy-btn" title="Copy prompt" data-prompt="${encodeURIComponent(prompt.content)}">
@@ -388,21 +364,14 @@ function loadSidebarScript(sidebar) {
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
             </svg>
           </button>
-          <button class="jump-btn" title="Jump to prompt" data-target-prompt="${prompt.id}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="m3 3 3 9-3 9 19-9Z"></path>
-              <path d="m6 12 13 0"></path>
-            </svg>
-            Jump
-          </button>
         </div>
       </div>
     `).join('');
 
-    // Add event listeners for buttons
+    // Add event listeners for buttons and cards
     sidebar.querySelectorAll('.copy-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        e.stopPropagation();
+        e.stopPropagation(); // Prevent card click when clicking copy button
         const content = decodeURIComponent(btn.dataset.prompt);
         navigator.clipboard.writeText(content).then(() => {
           showCopyToast();
@@ -410,10 +379,13 @@ function loadSidebarScript(sidebar) {
       });
     });
 
-    sidebar.querySelectorAll('.jump-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const promptId = btn.dataset.targetPrompt;
+    // Add click listener to prompt cards for jumping
+    sidebar.querySelectorAll('.prompt-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        // Don't trigger if clicking on the copy button
+        if (e.target.closest('.copy-btn')) return;
+        
+        const promptId = card.dataset.targetPrompt;
         jumpToPrompt(promptId);
       });
     });
@@ -434,7 +406,7 @@ function loadSidebarScript(sidebar) {
     console.log('Target prompt ID:', promptId);
     
     // Debug: Check what elements exist (excluding our own buttons)
-    const allElementsWithId = document.querySelectorAll('[data-prompt-id]:not(.jump-btn):not(button)');
+    const allElementsWithId = document.querySelectorAll('[data-prompt-id]:not(button)');
     console.log('Total message elements with data-prompt-id:', allElementsWithId.length);
     allElementsWithId.forEach((el, i) => {
       console.log(`Message ${i}: ID=${el.dataset.promptId}, text=${el.innerText.substring(0, 50)}...`);
@@ -446,7 +418,7 @@ function loadSidebarScript(sidebar) {
     console.log('Target prompt in memory:', targetPrompt ? `Found: ${targetPrompt.content.substring(0, 50)}...` : 'Not found');
     
     // First try to find by data-prompt-id attribute, but exclude our own buttons
-    let promptElement = document.querySelector(`[data-prompt-id="${promptId}"]:not(.jump-btn):not(button)`);
+    let promptElement = document.querySelector(`[data-prompt-id="${promptId}"]:not(button)`);
     console.log('Found by data-prompt-id (excluding buttons):', !!promptElement);
     
     // If not found, try to find in the promptIdMap
