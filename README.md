@@ -2,6 +2,13 @@
 
 A Chrome extension that tracks and displays your prompts in ChatGPT conversations, making it easy to navigate and copy previous prompts.
 
+### Design Principles
+
+-Minimalist
+-Clean
+-Non-Intrusive
+-Performant
+
 ## Features
 
 - 🎯 **Prompt Tracking**: Automatically tracks all your prompts in ChatGPT conversations
@@ -13,28 +20,8 @@ A Chrome extension that tracks and displays your prompts in ChatGPT conversation
 
 ## Installation
 
-### Method 1: Install from Chrome Web Store (Coming Soon)
+### Install from Chrome Web Store (Coming Soon)
 *This extension will be available on the Chrome Web Store soon.*
-
-### Method 2: Install as Developer Extension
-
-1. **Download the Extension**
-   - Clone this repository or download the ZIP file
-   - Extract to a folder on your computer
-
-2. **Enable Developer Mode in Chrome**
-   - Open Chrome and go to `chrome://extensions/`
-   - Toggle "Developer mode" in the top right corner
-
-3. **Load the Extension**
-   - Click "Load unpacked"
-   - Select the folder containing the extension files
-   - The extension should now appear in your extensions list
-
-4. **Start Using**
-   - Go to [ChatGPT](https://chatgpt.com) or [chat.openai.com](https://chat.openai.com)
-   - Look for the "Prompts" button in the top-right corner
-   - Click it to open the prompt tracker sidebar
 
 ## How to Use
 
@@ -84,48 +71,15 @@ This extension requires the following permissions:
 ```
 ├── manifest.json       # Extension manifest
 ├── content.js          # Main content script
-├── sidebar.html        # Sidebar interface
-├── sidebar.js          # Sidebar functionality
-├── styles.css          # Styling
-├── utils.js            # Utility functions (currently empty)
 └── README.md           # Documentation
 ```
 
-### Building
-No build process required - this is a vanilla JavaScript extension.
-
-### Contributing
-Feel free to submit issues and enhancement requests!
-
 ## Changelog
 
-### Version 0.1
+### Version 1.0
 - Initial release
 - Basic prompt tracking functionality
 - Modern UI with glass effects
 - Click-to-copy functionality
 - Jump-to-prompt navigation
 - Per-conversation storage
-
-## Support
-
-If you encounter any issues or have suggestions:
-1. Check the browser console for errors
-2. Try refreshing the ChatGPT page
-3. Disable and re-enable the extension
-4. Submit an issue on GitHub
-
-## License
-
-This project is open source and available under the [MIT License](LICENSE).
-Chrome extension for chatgpt (expand to other browsers later)
-
-Design Principles:-
-
-Minimalist
-
-Clean
-
-Non-Intrusive
-
-Performant (smooth)
