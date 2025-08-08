@@ -208,7 +208,7 @@ function injectSidebar() {
 
       /* Prompt content */
       #prompt-tracker-sidebar .prompt-content {
-        font-size: 13px;
+        font-size: 14px; /* Increased from 13px */
         line-height: 1.5;
         color: ${isDarkModeForSidebar ? '#e0e0e0' : '#374151'};
         white-space: pre-wrap;
@@ -217,7 +217,7 @@ function injectSidebar() {
         min-height: 40px;
         max-height: 100px;
         overflow: hidden;
-        margin-bottom: 12px;
+        margin-bottom: 0; /* Remove bottom margin */
         display: block !important;
         visibility: visible !important;
         flex-grow: 1;
