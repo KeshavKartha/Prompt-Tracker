@@ -856,8 +856,15 @@ function getSmartTrimmedText(text) {
 }
 
 // ===== Mutation Observer: Track New Prompts =====
-const chatObserver = new MutationObserver(() => {
+const chatObserver = new MutationObserver((mutations) => {
+  console.log('DOM mutation detected, checking for prompts...');
+  checkForNewPrompts();
+});
+
+// ===== Function to check for new prompts =====
+function checkForNewPrompts() {
   const convoId = getConversationId();
+  console.log('Checking for prompts in conversation:', convoId);
   if (!convoId) return;
 
   if (convoId !== currentConversationId) {
@@ -933,13 +940,51 @@ const chatObserver = new MutationObserver(() => {
     chrome.storage.local.set({ [convoId]: newPromptData });
     postPromptsToSidebar(newPromptData);
   }
-});
+}
 
 const chatContainer = document.querySelector("main");
 if (chatContainer) {
   chatObserver.observe(chatContainer, { childList: true, subtree: true });
   console.log("Chat observer started");
 }
+
+// ===== Real-time prompt detection =====
+// Check for new prompts every 3 seconds
+setInterval(() => {
+  checkForNewPrompts();
+}, 3000);
+
+// Also check when user stops typing (after input events)
+let typingTimer;
+document.addEventListener('input', () => {
+  clearTimeout(typingTimer);
+  typingTimer = setTimeout(() => {
+    console.log('User stopped typing, checking for new prompts...');
+    checkForNewPrompts();
+  }, 1000);
+});
+
+// Check when Enter key is pressed (likely sending a prompt)
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    setTimeout(() => {
+      console.log('Enter pressed, checking for new prompts...');
+      checkForNewPrompts();
+    }, 2000); // Wait 2 seconds for the message to appear
+  }
+});
+
+// Check when clicking send button
+document.addEventListener('click', (e) => {
+  const target = e.target;
+  if (target.matches('button[data-testid="send-button"], button[aria-label*="Send"], button[title*="Send"]') ||
+      target.closest('button[data-testid="send-button"], button[aria-label*="Send"], button[title*="Send"]')) {
+    setTimeout(() => {
+      console.log('Send button clicked, checking for new prompts...');
+      checkForNewPrompts();
+    }, 2000);
+  }
+});
 
 // ===== URL Change Observer for Conversation Switching =====
 let lastUrl = window.location.href;
@@ -987,12 +1032,32 @@ window.addEventListener('popstate', () => {
       
       if (newConvoId) {
         loadPromptsFromStorage(newConvoId);
+        setTimeout(() => checkForNewPrompts(), 500);
       }
     }
   }, 100); // Small delay to ensure URL has changed
 });
 
-// Check for conversation changes every 2 seconds as backup
+// Listen for hash changes and URL changes
+window.addEventListener('hashchange', () => {
+  console.log("Hash change detected");
+  setTimeout(() => {
+    const newConvoId = getConversationId();
+    if (newConvoId !== currentConversationId) {
+      console.log("Hash change - Conversation changed!");
+      currentConversationId = newConvoId;
+      currentPrompts = [];
+      postPromptsToSidebar([]);
+      
+      if (newConvoId) {
+        loadPromptsFromStorage(newConvoId);
+        setTimeout(() => checkForNewPrompts(), 500);
+      }
+    }
+  }, 100);
+});
+
+// Check for conversation changes every 1 second as backup (more frequent)
 setInterval(() => {
   const currentConvoId = getConversationId();
   if (currentConvoId !== currentConversationId) {
@@ -1003,9 +1068,11 @@ setInterval(() => {
     
     if (currentConvoId) {
       loadPromptsFromStorage(currentConvoId);
+      // Also trigger an immediate prompt check for the new conversation
+      setTimeout(() => checkForNewPrompts(), 500);
     }
   }
-}, 2000);
+}, 1000); // Changed from 2000ms to 1000ms for faster detection
 
 // Add a manual trigger for debugging - run the observer once on load
 setTimeout(() => {
