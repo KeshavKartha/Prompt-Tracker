@@ -1,12 +1,5 @@
-// ===== Helper: Check if dark mode is active =====
-function isDarkModeActive() {
-  return document.documentElement.classList.contains('dark') || 
-         document.body.classList.contains('dark-mode') ||
-         window.matchMedia('(prefers-color-scheme: dark)').matches ||
-         document.querySelector('html[data-theme="dark"]') ||
-         getComputedStyle(document.body).backgroundColor === 'rgb(33, 33, 33)' ||
-         getComputedStyle(document.body).backgroundColor === 'rgb(52, 53, 65)';
-}
+// ===== Dark Mode State =====
+let isDarkMode = false;
 
 // ===== Helper: Get Current Conversation ID =====
 function getConversationId() {
@@ -39,7 +32,30 @@ function injectSidebar() {
   // Inject the sidebar HTML content directly
   sidebar.innerHTML = `
     <div class="sidebar-header">
-      <h3>Previous Prompts</h3>
+      <div class="header-top">
+        <h3>Previous Prompts</h3>
+        <div class="header-buttons">
+          <button id="darkModeToggle" class="header-btn" title="Toggle Dark Mode">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          </button>
+          <button id="closeSidebar" class="header-btn" title="Close Sidebar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
       <div class="prompt-count">
         <span id="promptCount">0</span> prompts
       </div>
@@ -51,9 +67,6 @@ function injectSidebar() {
       <span>✓ Copied to clipboard!</span>
     </div>
   `;
-  
-  // Check if dark mode is active for sidebar styling
-  const isDarkModeForSidebar = isDarkModeActive();
   
   sidebar.style.cssText = `
     position: fixed;
@@ -68,8 +81,8 @@ function injectSidebar() {
     transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-size: 13px;
-    overflow-y: auto;
-    color: ${isDarkModeForSidebar ? '#e0e0e0' : '#1f2937'};
+    overflow-y: hidden;
+    color: #e0e0e0 !important;
   `;
 
   // Inject the CSS styles directly into the page
@@ -94,17 +107,110 @@ function injectSidebar() {
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
       }
 
+      #prompt-tracker-sidebar .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+
       #prompt-tracker-sidebar .sidebar-header h3 {
-        margin: 0 0 6px 0;
+        margin: 0;
         font-size: 15px;
         font-weight: 600;
-        color: ${isDarkModeForSidebar ? '#f0f0f0' : '#111827'};
+        color: #f0f0f0 !important;
+      }
+
+      #prompt-tracker-sidebar .header-buttons {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      #prompt-tracker-sidebar .header-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 6px;
+        padding: 6px;
+        cursor: pointer;
+        color: #e0e0e0 !important;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+      }
+
+      #prompt-tracker-sidebar .header-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.25);
+        transform: translateY(-1px);
+        color: #ffffff !important;
+      }
+
+      #prompt-tracker-sidebar .header-btn svg {
+        transition: all 0.2s ease;
       }
 
       #prompt-tracker-sidebar .prompt-count {
         font-size: 12px;
-        color: ${isDarkModeForSidebar ? '#a0a0a0' : '#6b7280'};
+        color: #a0a0a0 !important;
         font-weight: 500;
+      }
+
+      /* Dark mode styles */
+      #prompt-tracker-sidebar.dark-mode .sidebar-header {
+        background: rgba(15, 15, 15, 0.95);
+        border-color: rgba(255, 255, 255, 0.05);
+      }
+
+      #prompt-tracker-sidebar.dark-mode .sidebar-header h3 {
+        color: #ffffff !important;
+      }
+
+      #prompt-tracker-sidebar.dark-mode .prompt-count {
+        color: #b0b0b0 !important;
+      }
+
+      #prompt-tracker-sidebar.dark-mode .header-btn {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.08);
+        color: #c0c0c0 !important;
+      }
+
+      #prompt-tracker-sidebar.dark-mode .header-btn:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #ffffff !important;
+      }
+
+      /* Light mode styles */
+      #prompt-tracker-sidebar.light-mode .sidebar-header {
+        background: rgba(250, 250, 250, 0.95);
+        border-color: rgba(0, 0, 0, 0.08);
+      }
+
+      #prompt-tracker-sidebar.light-mode .sidebar-header h3 {
+        color: #1f2937 !important;
+      }
+
+      #prompt-tracker-sidebar.light-mode .prompt-count {
+        color: #6b7280 !important;
+      }
+
+      #prompt-tracker-sidebar.light-mode .header-btn {
+        background: rgba(0, 0, 0, 0.05);
+        border-color: rgba(0, 0, 0, 0.1);
+        color: #374151 !important;
+      }
+
+      #prompt-tracker-sidebar.light-mode .header-btn:hover {
+        background: rgba(0, 0, 0, 0.1);
+        border-color: rgba(0, 0, 0, 0.15);
+        color: #1f2937 !important;
       }
 
       /* Prompt list container */
@@ -139,7 +245,7 @@ function injectSidebar() {
       #prompt-tracker-sidebar .empty-state {
         text-align: center;
         padding: 40px 20px;
-        color: ${isDarkModeForSidebar ? '#9ca3af' : '#6b7280'};
+        color: #9ca3af !important;
         background: rgba(30, 30, 30, 0.9);
         border: 1px solid rgba(255, 255, 255, 0.08);
         border-radius: 8px;
@@ -147,6 +253,12 @@ function injectSidebar() {
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      #prompt-tracker-sidebar.light-mode .empty-state {
+        color: #6b7280 !important;
+        background: rgba(250, 250, 250, 0.9);
+        border-color: rgba(0, 0, 0, 0.08);
       }
 
       #prompt-tracker-sidebar .empty-icon {
@@ -158,25 +270,37 @@ function injectSidebar() {
       #prompt-tracker-sidebar .empty-text {
         font-size: 16px;
         font-weight: 500;
-        color: ${isDarkModeForSidebar ? '#d1d5db' : '#374151'};
+        color: #d1d5db !important;
         margin-bottom: 4px;
+      }
+
+      #prompt-tracker-sidebar.light-mode .empty-text {
+        color: #374151 !important;
       }
 
       #prompt-tracker-sidebar .empty-subtext {
         font-size: 13px;
-        color: ${isDarkModeForSidebar ? '#6b7280' : '#9ca3af'};
+        color: #6b7280 !important;
         margin-bottom: 16px;
+      }
+
+      #prompt-tracker-sidebar.light-mode .empty-subtext {
+        color: #9ca3af !important;
       }
 
       #prompt-tracker-sidebar .empty-refresh-hint {
         font-size: 12px;
-        color: ${isDarkModeForSidebar ? '#60a5fa' : '#3b82f6'};
+        color: #60a5fa !important;
         background: rgba(59, 130, 246, 0.1);
         border: 1px solid rgba(59, 130, 246, 0.2);
         border-radius: 6px;
         padding: 8px 12px;
         margin-top: 12px;
         font-style: italic;
+      }
+
+      #prompt-tracker-sidebar.light-mode .empty-refresh-hint {
+        color: #3b82f6 !important;
       }
 
       /* Prompt cards */
@@ -199,6 +323,12 @@ function injectSidebar() {
         margin-bottom: 4px;
       }
 
+      #prompt-tracker-sidebar.light-mode .prompt-card {
+        background: rgba(250, 250, 250, 0.9);
+        border-color: rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+
       #prompt-tracker-sidebar .prompt-card:hover {
         transform: translateY(-1px);
         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
@@ -206,28 +336,42 @@ function injectSidebar() {
         background: rgba(45, 45, 45, 0.9);
       }
 
+      #prompt-tracker-sidebar.light-mode .prompt-card:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        border-color: rgba(0, 0, 0, 0.12);
+        background: rgba(255, 255, 255, 0.95);
+      }
+
       /* Prompt content */
       #prompt-tracker-sidebar .prompt-content {
-        font-size: 14px; /* Increased from 13px */
+        font-size: 14px;
         line-height: 1.5;
-        color: ${isDarkModeForSidebar ? '#e0e0e0' : '#374151'};
+        color: #e0e0e0 !important;
         white-space: pre-wrap;
         word-break: break-word;
         position: relative;
         min-height: 40px;
         max-height: 100px;
         overflow: hidden;
-        margin-bottom: 0; /* Remove bottom margin */
+        margin-bottom: 0;
         display: block !important;
         visibility: visible !important;
         flex-grow: 1;
       }
 
+      #prompt-tracker-sidebar.light-mode .prompt-content {
+        color: #374151 !important;
+      }
+
       #prompt-tracker-sidebar .prompt-content::before {
         content: attr(data-number) ". ";
         font-weight: 600;
-        color: ${isDarkModeForSidebar ? '#a0a0a0' : '#888888'};
+        color: #a0a0a0 !important;
         margin-right: 8px;
+      }
+
+      #prompt-tracker-sidebar.light-mode .prompt-content::before {
+        color: #888888 !important;
       }
 
       #prompt-tracker-sidebar .prompt-content.long::after {
@@ -239,6 +383,10 @@ function injectSidebar() {
         height: 30px;
         background: linear-gradient(to bottom, transparent, rgba(40, 40, 40, 1));
         pointer-events: none;
+      }
+
+      #prompt-tracker-sidebar.light-mode .prompt-content.long::after {
+        background: linear-gradient(to bottom, transparent, rgba(250, 250, 250, 1));
       }
 
       /* Prompt actions */
@@ -260,7 +408,7 @@ function injectSidebar() {
         padding: 6px;
         border-radius: 4px;
         cursor: pointer;
-        color: ${isDarkModeForSidebar ? '#a0a0a0' : '#6b7280'};
+        color: #a0a0a0 !important;
         transition: all 0.15s ease;
         display: flex;
         align-items: center;
@@ -271,10 +419,19 @@ function injectSidebar() {
         flex-shrink: 0;
       }
 
+      #prompt-tracker-sidebar.light-mode .copy-btn {
+        color: #6b7280 !important;
+      }
+
       #prompt-tracker-sidebar .copy-btn:hover {
         background: rgba(255, 255, 255, 0.05);
-        color: ${isDarkModeForSidebar ? '#e0e0e0' : '#374151'};
+        color: #e0e0e0 !important;
         opacity: 1;
+      }
+
+      #prompt-tracker-sidebar.light-mode .copy-btn:hover {
+        background: rgba(0, 0, 0, 0.05);
+        color: #374151 !important;
       }
 
       /* Copy toast notification */
@@ -283,7 +440,7 @@ function injectSidebar() {
         bottom: 20px;
         right: 20px;
         background: #10b981;
-        color: white;
+        color: white !important;
         padding: 12px 16px;
         border-radius: 8px;
         font-size: 13px;
@@ -304,6 +461,7 @@ function injectSidebar() {
         display: flex;
         align-items: center;
         gap: 6px;
+        color: white !important;
       }
 
       /* Prompt highlight animation */
@@ -321,6 +479,38 @@ function injectSidebar() {
   }
 
   document.body.appendChild(sidebar);
+
+  // Add click-outside-to-close functionality (only if not already added)
+  if (!document.hasClickOutsideListener) {
+    document.addEventListener('click', (e) => {
+      const sidebar = document.getElementById("prompt-tracker-sidebar");
+      const toggleButton = document.getElementById("prompt-sidebar-toggle");
+      const backupToggle = document.getElementById("prompt-sidebar-toggle-nav");
+      
+      // Check if sidebar is open
+      if (sidebar && sidebar.style.right === "0px") {
+        // Check if click is outside sidebar and not on any toggle button
+        const clickedOnSidebar = sidebar.contains(e.target);
+        const clickedOnMainToggle = toggleButton?.contains(e.target);
+        const clickedOnBackupToggle = backupToggle?.contains(e.target);
+        const clickedOnToggleButton = clickedOnMainToggle || clickedOnBackupToggle;
+        
+        if (!clickedOnSidebar && !clickedOnToggleButton) {
+          // Close the sidebar
+          sidebar.style.right = "-323px";
+          sidebar.style.pointerEvents = "none";
+          
+          // Show the main toggle button again
+          if (toggleButton) {
+            toggleButton.style.opacity = "1";
+            toggleButton.style.visibility = "visible";
+            toggleButton.style.pointerEvents = "auto";
+          }
+        }
+      }
+    });
+    document.hasClickOutsideListener = true;
+  }
 
   // Load and initialize the sidebar functionality
   loadSidebarScript(sidebar);
@@ -492,34 +682,7 @@ function loadSidebarScript(sidebar) {
         promptElement.classList.remove('prompt-highlight');
       }, 3000);
       
-      // Close sidebar after jumping
-      const sidebar = document.getElementById("prompt-tracker-sidebar");
-      if (sidebar) {
-        sidebar.style.right = "-323px";
-        sidebar.style.pointerEvents = "none";
-        
-        // Update toggle button to normal state
-        const toggle = document.getElementById("prompt-sidebar-toggle");
-        if (toggle) {
-          const isDarkMode = isDarkModeActive();
-          toggle.innerHTML = `
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 3h18v18H3z"/>
-              <path d="M8 7h8"/>
-              <path d="M8 11h8"/>
-              <path d="M8 15h5"/>
-            </svg>
-          `;
-          toggle.style.background = isDarkMode ? "rgba(40, 40, 40, 0.95)" : "rgba(255, 255, 255, 0.95)";
-          toggle.style.color = isDarkMode ? "#e0e0e0" : "#374151";
-          toggle.style.top = "64px";
-          toggle.style.right = "16px";
-          toggle.style.width = "40px";
-          toggle.style.height = "40px";
-          toggle.style.borderRadius = "50%";
-          toggle.style.padding = "10px";
-        }
-      }
+      // Note: Sidebar remains open after jumping to allow users to click more prompts
     } else {
       console.error('FAILED: Prompt element not found for ID:', promptId);
       console.log('=== END JUMP DEBUG ===');
@@ -537,6 +700,106 @@ function loadSidebarScript(sidebar) {
     
     console.log('=== END JUMP DEBUG ===');
   }
+
+  // Dark mode toggle functionality
+  const darkModeToggle = sidebar.querySelector('#darkModeToggle');
+  const closeSidebar = sidebar.querySelector('#closeSidebar');
+  
+  // Function to update main toggle button colors
+  function updateMainToggleColors() {
+    const mainToggle = document.getElementById("prompt-sidebar-toggle");
+    if (mainToggle) {
+      mainToggle.style.background = isDarkMode ? "rgba(40, 40, 40, 0.95)" : "rgba(255, 255, 255, 0.95)";
+      mainToggle.style.borderColor = isDarkMode ? "rgba(80, 80, 80, 0.3)" : "rgba(0, 0, 0, 0.08)";
+      mainToggle.style.color = isDarkMode ? "#e0e0e0" : "#374151";
+      mainToggle.style.boxShadow = isDarkMode ? "0 2px 8px rgba(0, 0, 0, 0.3)" : "0 2px 8px rgba(0, 0, 0, 0.1)";
+    }
+  }
+  
+  if (darkModeToggle) {
+    darkModeToggle.addEventListener('click', () => {
+      isDarkMode = !isDarkMode;
+      
+      // Update sidebar classes
+      if (isDarkMode) {
+        sidebar.classList.remove('light-mode');
+        sidebar.classList.add('dark-mode');
+        
+        // Update toggle icon to moon
+        darkModeToggle.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        `;
+      } else {
+        sidebar.classList.remove('dark-mode');
+        sidebar.classList.add('light-mode');
+        
+        // Update toggle icon to sun
+        darkModeToggle.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        `;
+      }
+      
+      // Update main toggle button colors
+      updateMainToggleColors();
+      
+      // Save preference
+      chrome.storage.local.set({ darkMode: isDarkMode });
+    });
+  }
+  
+  if (closeSidebar) {
+    closeSidebar.addEventListener('click', () => {
+      sidebar.style.right = "-323px";
+      sidebar.style.pointerEvents = "none";
+      
+      // Show the main toggle button again
+      const mainToggle = document.getElementById("prompt-sidebar-toggle");
+      if (mainToggle) {
+        mainToggle.style.opacity = "1";
+        mainToggle.style.visibility = "visible";
+        mainToggle.style.pointerEvents = "auto";
+      }
+    });
+  }
+  
+  // Load saved dark mode preference
+  chrome.storage.local.get(['darkMode'], (result) => {
+    if (result.darkMode !== undefined) {
+      isDarkMode = result.darkMode;
+      
+      if (isDarkMode) {
+        sidebar.classList.add('dark-mode');
+        if (darkModeToggle) {
+          darkModeToggle.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          `;
+        }
+      } else {
+        sidebar.classList.add('light-mode');
+      }
+    } else {
+      // Default to dark mode
+      sidebar.classList.add('dark-mode');
+      isDarkMode = true;
+    }
+    
+    // Update main toggle button colors based on loaded preference
+    updateMainToggleColors();
+  });
 
   // Store reference for updating
   sidebar.updatePromptsDisplay = updatePromptsDisplay;
@@ -582,54 +845,36 @@ function createToggleButton() {
       <path d="M8 15h5"/>
     </svg>
   `;
-  // Check if dark mode is active
-  const isDarkModeForToggle = isDarkModeActive();
-
+  
   toggle.style.cssText = `
     position: fixed !important;
     top: 64px !important;
-    right: 16px !important;
+    right: 30px !important;
     z-index: 99999 !important;
-    padding: 10px !important;
-    background: ${isDarkModeForToggle ? 'rgba(40, 40, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)'} !important;
-    border: 1px solid ${isDarkModeForToggle ? 'rgba(80, 80, 80, 0.3)' : 'rgba(0, 0, 0, 0.08)'} !important;
-    border-radius: 50% !important;
-    box-shadow: 0 2px 8px ${isDarkModeForToggle ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)'} !important;
+    padding: 8px !important;
+    background: ${isDarkMode ? 'rgba(40, 40, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)'} !important;
+    border: 1px solid ${isDarkMode ? 'rgba(80, 80, 80, 0.3)' : 'rgba(0, 0, 0, 0.08)'} !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px ${isDarkMode ? 'rgba(0, 0, 0, 0.3)' : 'rgba(0, 0, 0, 0.1)'} !important;
     cursor: pointer !important;
     backdrop-filter: blur(12px) !important;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    color: ${isDarkModeForToggle ? '#e0e0e0' : '#374151'} !important;
+    color: ${isDarkMode ? '#e0e0e0' : '#374151'} !important;
     transition: all 0.2s ease !important;
     user-select: none !important;
-    width: 40px !important;
-    height: 40px !important;
+    width: 32px !important;
+    height: 32px !important;
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
   `;
   
-  // Add hover effects
-  toggle.addEventListener("mouseenter", () => {
-    const isDarkMode = isDarkModeActive();
+  toggle.addEventListener("click", (e) => {
+    e.stopPropagation(); // Prevent click from bubbling to document
     
-    toggle.style.transform = "translateY(-1px)";
-    toggle.style.boxShadow = isDarkMode ? "0 4px 12px rgba(0, 0, 0, 0.4)" : "0 4px 12px rgba(0, 0, 0, 0.15)";
-    toggle.style.background = isDarkMode ? "rgba(40, 40, 40, 1)" : "rgba(255, 255, 255, 1)";
-  });
-  
-  toggle.addEventListener("mouseleave", () => {
-    const isDarkMode = isDarkModeActive();
-    
-    toggle.style.transform = "translateY(0)";
-    toggle.style.boxShadow = isDarkMode ? "0 4px 12px rgba(0, 0, 0, 0.5)" : "0 4px 12px rgba(0, 0, 0, 0.15)";
-    toggle.style.background = isDarkMode ? "rgba(40, 40, 40, 0.95)" : "rgba(255, 255, 255, 0.95)";
-  });
-
-  toggle.addEventListener("click", () => {
-    const isDarkMode = isDarkModeActive();
     const sidebar = document.getElementById("prompt-tracker-sidebar");
     
     // Check if sidebar exists before trying to access its properties
@@ -641,54 +886,22 @@ function createToggleButton() {
     }
     
     const isOpen = sidebar.style.right === "0px";
-    sidebar.style.right = isOpen ? "-323px" : "0px";
-    sidebar.style.pointerEvents = isOpen ? "none" : "auto";
+    console.log("Toggle clicked, sidebar isOpen:", isOpen);
     
-    // Update button appearance and content based on state
-    if (isOpen) {
-      // Sidebar is closing - show normal button
-      toggle.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 3h18v18H3z"/>
-          <path d="M8 7h8"/>
-          <path d="M8 11h8"/>
-          <path d="M8 15h5"/>
-        </svg>
-      `;
-      toggle.style.background = isDarkMode ? "rgba(40, 40, 40, 0.95)" : "rgba(255, 255, 255, 0.95)";
-      toggle.style.color = isDarkMode ? "#e0e0e0" : "#374151";
-      toggle.style.top = "64px";
-      toggle.style.right = "16px";
-      toggle.style.left = "auto";
-      toggle.style.width = "40px";
-      toggle.style.height = "40px";
-      toggle.style.borderRadius = "50%";
-      toggle.style.padding = "10px";
-      toggle.style.display = "flex";
-      toggle.style.opacity = "1";
-      toggle.style.visibility = "visible";
-      toggle.style.pointerEvents = "auto";
+    // Only open the sidebar if it's closed, don't close it
+    if (!isOpen) {
+      console.log("Opening sidebar...");
+      sidebar.style.right = "0px";
+      sidebar.style.pointerEvents = "auto";
+      
+      // Hide the toggle button when sidebar opens
+      toggle.style.opacity = "0";
+      toggle.style.visibility = "hidden";
+      toggle.style.pointerEvents = "none";
     } else {
-      // Sidebar is opening - show close button on right side
-      toggle.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"></line>
-          <line x1="6" y1="6" x2="18" y2="18"></line>
-        </svg>
-      `;
-      toggle.style.background = "rgba(60, 60, 60, 0.95)";
-      toggle.style.color = "white";
-      toggle.style.top = "20px";
-      toggle.style.right = "24px";
-      toggle.style.left = "auto";
-      toggle.style.width = "32px";
-      toggle.style.height = "32px";
-      toggle.style.borderRadius = "50%";
-      toggle.style.padding = "6px";
-      toggle.style.display = "flex";
-      toggle.style.alignItems = "center";
-      toggle.style.justifyContent = "center";
+      console.log("Sidebar already open, ignoring click");
     }
+    // If sidebar is already open, do nothing (don't close it)
   });
 
   document.body.appendChild(toggle);
@@ -706,8 +919,9 @@ function createToggleButton() {
     navToggle.style.display = 'none'; // Hidden backup
     
     // Add the same click event handler to backup button
-    navToggle.addEventListener("click", () => {
-      const isDarkMode = isDarkModeActive();
+    navToggle.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent click from bubbling to document
+      
       const sidebar = document.getElementById("prompt-tracker-sidebar");
       
       // Check if sidebar exists before trying to access its properties
@@ -719,20 +933,25 @@ function createToggleButton() {
       }
       
       const isOpen = sidebar.style.right === "0px";
-      sidebar.style.right = isOpen ? "-323px" : "0px";
-      sidebar.style.pointerEvents = isOpen ? "none" : "auto";
+      console.log("Backup toggle clicked, sidebar isOpen:", isOpen);
       
-      // Update button appearance (abbreviated for backup button)
-      if (isOpen) {
-        navToggle.innerHTML = toggle.innerHTML; // Copy main button content
+      // Only open the sidebar if it's closed, don't close it
+      if (!isOpen) {
+        console.log("Opening sidebar via backup button...");
+        sidebar.style.right = "0px";
+        sidebar.style.pointerEvents = "auto";
+        
+        // Hide the main toggle button when sidebar opens
+        const mainToggle = document.getElementById("prompt-sidebar-toggle");
+        if (mainToggle) {
+          mainToggle.style.opacity = "0";
+          mainToggle.style.visibility = "hidden";
+          mainToggle.style.pointerEvents = "none";
+        }
       } else {
-        navToggle.innerHTML = `
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        `;
+        console.log("Sidebar already open, ignoring backup click");
       }
+      // If sidebar is already open, do nothing (don't close it)
     });
     
     navContainer.appendChild(navToggle);
