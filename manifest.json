@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "Prompt Tracker",
-    "version": "0.1",
-    "description": "Tracks and lists your prompts in ChatGPT conversations allowing you to easily navigate between prompts within a conversation.",
+    "version": "1.0",
+    "description": "Tracks your prompts within ChatGPT conversations for easy navigation.",
     "permissions": ["storage", "scripting", "activeTab"],
     "content_scripts": [
         {
