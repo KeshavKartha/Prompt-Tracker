@@ -92,6 +92,9 @@ function applyTheme(theme) {
 /**
  * Injects the sidebar container and its associated styles into the page.
  */
+/**
+ * Injects the sidebar container and its associated styles into the page.
+ */
 function injectSidebar() {
   if (document.getElementById("prompt-tracker-sidebar")) return;
 
@@ -116,7 +119,6 @@ function injectSidebar() {
     border: none;
     z-index: 9999;
     pointer-events: none;
-    /* MODIFIED: Changed easing to ease-out for a more responsive start */
     transition: all 0.3s ease-out;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-size: 12.5px;
@@ -195,6 +197,9 @@ function injectSidebar() {
       .prompt-content::before { content: attr(data-number) ". "; font-weight: 600; margin-right: 4px; }
       body.theme-dark .prompt-content::before { color: #a0a0a0; }
       body.theme-light .prompt-content::before { color: #888888; }
+      
+      /* --- RESTORED aCTION BUTTON STYLES --- */
+      .prompt-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-top: auto; flex-shrink: 0; min-height: 24px; padding: 4px 2px 0 0; }
       
       .copy-btn { background: none; border: none; padding: 4px; border-radius: 4px; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; justify-content: center; opacity: 0.7; }
       body.theme-dark .copy-btn { color: #a0a0a0; }
