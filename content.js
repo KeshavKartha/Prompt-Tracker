@@ -3,6 +3,7 @@
  *
  * This script injects a sidebar into the ChatGPT interface to track and manage prompts within a conversation.
  * It uses a direct DIV injection method and robust, width-based responsive logic.
+ * Features manual light/dark mode theme toggling.
  */
 
 // ===================================================================================
@@ -15,18 +16,10 @@ const promptIdMap = new WeakMap();
 let sidebarHiddenRightPos = "-280px";
 const sidebarDefaultWidth = 260;
 
-/**
- * Checks for dark mode using multiple reliable methods.
- * @returns {boolean} True if dark mode is active.
- */
-function isDarkModeActive() {
-  return document.documentElement.classList.contains('dark') ||
-    document.body.classList.contains('dark-mode') ||
-    window.matchMedia('(prefers-color-scheme: dark)').matches ||
-    document.querySelector('html[data-theme="dark"]') ||
-    getComputedStyle(document.body).backgroundColor === 'rgb(33, 33, 33)' ||
-    getComputedStyle(document.body).backgroundColor === 'rgb(52, 53, 65)';
-}
+// ===== NEW THEME STATE MANAGEMENT =====
+let currentTheme = 'dark'; // Default theme: 'dark' or 'light'
+const themeStorageKey = 'promptTrackerTheme';
+// The isDarkModeActive() function has been removed.
 
 /**
  * Extracts the conversation ID from the current URL.
@@ -47,12 +40,55 @@ function generatePromptId() {
 }
 
 // ===================================================================================
-// ===== UI INJECTION & MANAGEMENT ===================================================
+// ===== THEME MANAGEMENT (NEW) ======================================================
 // ===================================================================================
 
 /**
- * Injects the sidebar container and its associated styles into the page.
+ * Applies the selected theme to all UI elements.
+ * @param {string} theme - The theme to apply, either 'dark' or 'light'.
  */
+function applyTheme(theme) {
+  currentTheme = theme;
+  const isDark = theme === 'dark';
+
+  // ===== CORRECTED LOGIC =====
+  // Apply theme class to the main document body for global access.
+  // This ensures CSS rules can target all UI elements, including the external buttons.
+  document.body.classList.remove('theme-dark', 'theme-light');
+  document.body.classList.add(isDark ? 'theme-dark' : 'theme-light');
+
+  const mainToggle = document.getElementById("prompt-sidebar-toggle");
+  const themeToggle = document.getElementById("theme-toggle-button");
+  
+  // Update the theme toggle button's icon and base style
+  if (themeToggle) {
+    themeToggle.innerHTML = isDark 
+      ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>` // Sun icon
+      : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`; // Moon icon
+    themeToggle.style.background = isDark ? "rgba(40,40,40,0.95)" : "rgba(255,255,255,0.95)";
+    themeToggle.style.color = isDark ? "#e0e0e0" : "#374151";
+    themeToggle.style.border = `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`;
+  }
+  
+  // Manually update the main toggle button's styles, as they depend on both theme and open/closed state
+  if (mainToggle) {
+    const isOpen = mainToggle.classList.contains('prompt-toggle-close');
+    if(isOpen) {
+        mainToggle.style.background = isDark ? "rgba(40,40,40,0.95)" : "rgba(255,255,255,0.95)";
+        mainToggle.style.color = isDark ? "#e0e0e0" : "#374151";
+        mainToggle.style.border = `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`;
+    } else {
+        mainToggle.style.background = isDark ? 'rgba(40,40,40,0.95)' : 'rgba(255,255,255,0.95)';
+        mainToggle.style.color = isDark ? '#e0e0e0' : '#374151';
+        mainToggle.style.border = `1px solid ${isDark ? 'rgba(80,80,80,0.3)' : 'rgba(0,0,0,0.08)'}`;
+    }
+  }
+}
+
+// ===================================================================================
+// ===== UI INJECTION & MANAGEMENT ===================================================
+// ===================================================================================
+
 /**
  * Injects the sidebar container and its associated styles into the page.
  */
@@ -69,8 +105,6 @@ function injectSidebar() {
     <div id="promptList" class="prompt-list-container"></div>
     <div id="copyToast" class="copy-toast"><span>✓ Copied to clipboard!</span></div>
   `;
-
-  const isDark = isDarkModeActive();
   
   sidebar.style.cssText = `
     position: fixed;
@@ -82,88 +116,94 @@ function injectSidebar() {
     border: none;
     z-index: 9999;
     pointer-events: none;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* MODIFIED: Changed easing to ease-out for a more responsive start */
+    transition: all 0.3s ease-out;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-size: 12.5px;
-    color: ${isDark ? '#e0e0e0' : '#1f2937'};
   `;
   
   if (!document.getElementById('prompt-tracker-styles')) {
     const style = document.createElement('style');
     style.id = 'prompt-tracker-styles';
     style.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Figtree:wght@400;600&display=swap');
+      body.theme-dark #prompt-tracker-sidebar { color: #e0e0e0; }
+      body.theme-light #prompt-tracker-sidebar { color: #1f2937; }
 
-      #prompt-sidebar-toggle:not(.prompt-toggle-close):hover {
-        background: ${isDark ? 'rgba(55, 55, 55, 0.95)' : 'rgba(240, 240, 240, 0.95)'} !important;
+      body.theme-dark #prompt-sidebar-toggle:not(.prompt-toggle-close):hover { background: rgba(55, 55, 55, 0.95) !important; }
+      body.theme-light #prompt-sidebar-toggle:not(.prompt-toggle-close):hover { background: rgba(240, 240, 240, 0.95) !important; }
+      
+      body.theme-dark #theme-toggle-button:hover { background: rgba(70, 70, 70, 0.95) !important; }
+      body.theme-light #theme-toggle-button:hover { background: rgba(230, 230, 230, 0.95) !important; }
+      
+      #theme-toggle-button:hover {
+        transform: scale(1.1);
       }
+
       #prompt-sidebar-toggle.prompt-toggle-close:hover {
         transform: scale(1.05) rotate(90deg);
         background-color: rgba(239, 68, 68, 0.9) !important;
         border-color: rgba(239, 68, 68, 0.9) !important;
       }
-       #prompt-tracker-sidebar .prompt-list-container::-webkit-scrollbar-thumb:hover {
-        background: rgba(${isDark ? '255,255,255,0.35' : '0,0,0,0.35'});
-      }
       
       #prompt-tracker-sidebar .sidebar-header {
-        padding: 14px;
-        border-bottom: none; 
-        background: ${isDark ? '#121212' : 'rgba(248,248,248,0.9)'};
-        border: 1px solid rgba(${isDark ? '255,255,255,0.1' : '0,0,0,0.05'});
-        border-radius: 8px; margin: 12px; margin-bottom: 8px;
+        border-radius: 8px; margin: 12px; margin-bottom: 8px; padding: 14px;
         position: sticky; top: 12px; z-index: 10; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-        box-shadow: 0 2px 6px rgba(0,0,0,${isDark ? '0.1' : '0.05'});
       }
+      body.theme-dark .sidebar-header { background: #121212; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+      body.theme-light .sidebar-header { background: rgba(248,248,248,0.9); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
       
-      #prompt-tracker-sidebar .sidebar-header h3 { 
-        margin: 0 0 4px 0;
-        font-size: 16px;
-        font-weight: 600;
-        color: ${isDark ? '#f0f0f0' : '#111827'};
-      }
+      .sidebar-header h3 { margin: 0 0 4px 0; font-size: 15px; font-weight: 600; font-family: 'Figtree', 'Inter', sans-serif; }
+      body.theme-dark .sidebar-header h3 { color: #f0f0f0; }
+      body.theme-light .sidebar-header h3 { color: #111827; }
 
-      #prompt-tracker-sidebar .prompt-count { font-size: 11.5px; color: ${isDark ? '#a0a0a0' : '#6b7280'}; font-weight: 500; }
-      #prompt-tracker-sidebar .prompt-list-container { padding: 0 12px 12px 12px; display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 90px); overflow-y: auto; }
-      #prompt-tracker-sidebar .prompt-list-container::-webkit-scrollbar { width: 6px; }
-      #prompt-tracker-sidebar .prompt-list-container::-webkit-scrollbar-track { background: transparent; }
-      #prompt-tracker-sidebar .prompt-list-container::-webkit-scrollbar-thumb { background: rgba(${isDark ? '255,255,255,0.2' : '0,0,0,0.2'}); border-radius: 3px; transition: background 0.2s ease; }
+      .prompt-count { font-size: 11.5px; font-weight: 500; }
+      body.theme-dark .prompt-count { color: #a0a0a0; }
+      body.theme-light .prompt-count { color: #6b7280; }
       
-      #prompt-tracker-sidebar .empty-state { text-align: center; padding: 40px 20px; color: ${isDark ? '#9ca3af' : '#6b7280'}; background: rgba(${isDark ? '30,30,30,0.9' : '248,248,248,0.9'}); border: 1px solid rgba(${isDark ? '255,255,255,0.08' : '0,0,0,0.05'}); border-radius: 8px; margin: 0 12px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
-      #prompt-tracker-sidebar .empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.6; }
-      #prompt-tracker-sidebar .empty-text { font-size: 15px; font-weight: 500; color: ${isDark ? '#d1d5db' : '#374151'}; margin-bottom: 4px; }
-      #prompt-tracker-sidebar .empty-subtext { font-size: 12.5px; color: ${isDark ? '#6b7280' : '#9ca3af'}; margin-bottom: 16px; }
-      #prompt-tracker-sidebar .empty-refresh-hint { font-size: 11.5px; color: ${isDark ? '#60a5fa' : '#3b82f6'}; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; padding: 8px 12px; margin-top: 12px; font-style: italic; }
+      .prompt-list-container { padding: 0 12px 12px 12px; display: flex; flex-direction: column; gap: 12px; height: calc(100vh - 90px); overflow-y: auto; }
+      .prompt-list-container::-webkit-scrollbar { width: 6px; }
+      .prompt-list-container::-webkit-scrollbar-track { background: transparent; }
+      body.theme-dark .prompt-list-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+      body.theme-light .prompt-list-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); }
+      body.theme-dark .prompt-list-container::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.35); }
+      body.theme-light .prompt-list-container::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.35); }
+      
+      .empty-state { text-align: center; padding: 40px 20px; border-radius: 8px; margin: 0 12px; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+      body.theme-dark .empty-state { color: #9ca3af; background: rgba(30,30,30,0.9); border: 1px solid rgba(255,255,255,0.08); }
+      body.theme-light .empty-state { color: #6b7280; background: rgba(248,248,248,0.9); border: 1px solid rgba(0,0,0,0.05); }
+      .empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.6; }
+      .empty-text { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+      body.theme-dark .empty-text { color: #d1d5db; }
+      body.theme-light .empty-text { color: #374151; }
+      .empty-subtext { font-size: 12.5px; margin-bottom: 16px; }
+      body.theme-dark .empty-subtext { color: #6b7280; }
+      body.theme-light .empty-subtext { color: #9ca3af; }
+      .empty-refresh-hint { font-size: 11.5px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); border-radius: 6px; padding: 8px 12px; margin-top: 12px; font-style: italic; }
+      body.theme-dark .empty-refresh-hint { color: #60a5fa; }
+      body.theme-light .empty-refresh-hint { color: #3b82f6; }
 
-      /* --- MODIFIED RULE --- */
-      #prompt-tracker-sidebar .prompt-card { background: rgba(${isDark ? '40,40,40,0.85' : '255,255,255,0.85'}); border: 1px solid rgba(${isDark ? '255,255,255,0.08' : '0,0,0,0.05'}); border-radius: 8px; padding: 12px; box-shadow: 0 4px 12px rgba(0,0,0,${isDark ? '0.2' : '0.08'}); cursor: pointer; transition: all 0.15s ease; overflow: hidden; position: relative; min-height: 25px; /* Changed from 80px */ display: flex; flex-direction: column; flex-shrink: 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+      .prompt-card { border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.15s ease; overflow: hidden; position: relative; min-height: 25px; display: flex; flex-direction: column; flex-shrink: 0; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+      body.theme-dark .prompt-card { background: rgba(40,40,40,0.85); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+      body.theme-light .prompt-card { background: rgba(255,255,255,0.85); border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+      body.theme-dark .prompt-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.25); border-color: rgba(255,255,255,0.12); background: rgba(45,45,45,0.9); }
+      body.theme-light .prompt-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.08); background: rgba(255,255,255,0.9); }
       
-      #prompt-tracker-sidebar .prompt-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,${isDark ? '0.25' : '0.1'}); border-color: rgba(${isDark ? '255,255,255,0.12' : '0,0,0,0.08'}); background: rgba(${isDark ? '45,45,45,0.9' : '255,255,255,0.9'}); }
-      
-      #prompt-tracker-sidebar .prompt-content {
-        font-family: 'Figtree', sans-serif;
-        font-size: 13.5px;
-        line-height: 1.5;
-        color: ${isDark ? '#e0e0e0' : '#374151'};
-        white-space: pre-wrap;
-        word-break: break-word;
-        position: relative;
-        min-height: 20px;
-        max-height: 100px;
-        overflow: hidden;
-      }
-      
-      /* --- MODIFIED RULE --- */
-      #prompt-tracker-sidebar .prompt-content.long {
-        max-height: 115px; /* Changed from 250px */
-      }
+      .prompt-content { font-family: 'Figtree', 'Inter', sans-serif; font-size: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; position: relative; min-height: 20px; max-height: 100px; overflow: hidden; }
+      body.theme-dark .prompt-content { color: #e0e0e0; }
+      body.theme-light .prompt-content { color: #374151; }
 
-      #prompt-tracker-sidebar .prompt-content::before { content: attr(data-number) ". "; font-weight: 600; color: ${isDark ? '#a0a0a0' : '#888888'}; margin-right: 4px; }
-      #prompt-tracker-sidebar .prompt-actions { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-top: auto; flex-shrink: 0; min-height: 24px; padding: 4px 2px 0 0; }
-      #prompt-tracker-sidebar .copy-btn { background: none; border: none; padding: 4px; border-radius: 4px; cursor: pointer; color: ${isDark ? '#a0a0a0' : '#6b7280'}; transition: all 0.15s ease; display: flex; align-items: center; justify-content: center; opacity: 0.7; }
-      #prompt-tracker-sidebar .copy-btn:hover { background: rgba(${isDark ? '255,255,255,0.05' : '0,0,0,0.05'}); color: ${isDark ? '#e0e0e0' : '#374151'}; opacity: 1; }
-      #prompt-tracker-sidebar .copy-toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 16px; border-radius: 8px; font-size: 12.5px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
-      #prompt-tracker-sidebar .copy-toast.show { transform: translateY(0); opacity: 1; }
+      .prompt-content::before { content: attr(data-number) ". "; font-weight: 600; margin-right: 4px; }
+      body.theme-dark .prompt-content::before { color: #a0a0a0; }
+      body.theme-light .prompt-content::before { color: #888888; }
+      
+      .copy-btn { background: none; border: none; padding: 4px; border-radius: 4px; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; justify-content: center; opacity: 0.7; }
+      body.theme-dark .copy-btn { color: #a0a0a0; }
+      body.theme-light .copy-btn { color: #6b7280; }
+      body.theme-dark .copy-btn:hover { background: rgba(255,255,255,0.05); color: #e0e0e0; opacity: 1; }
+      body.theme-light .copy-btn:hover { background: rgba(0,0,0,0.05); color: #374151; opacity: 1; }
+
+      .copy-toast { position: fixed; bottom: 20px; right: 20px; background: #10b981; color: white; padding: 12px 16px; border-radius: 8px; font-size: 12.5px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(100px); opacity: 0; transition: all 0.3s ease; z-index: 10000; }
+      .copy-toast.show { transform: translateY(0); opacity: 1; }
     `;
     document.head.appendChild(style);
   }
@@ -171,18 +211,17 @@ function injectSidebar() {
   document.body.appendChild(sidebar);
   loadSidebarScript(sidebar);
   createToggleButton();
+  createThemeToggle();
 }
 
 /**
- * Creates the floating toggle button.
+ * Creates the floating toggle button to open/close the sidebar.
  */
 function createToggleButton() {
   if (document.getElementById("prompt-sidebar-toggle")) return;
 
   const toggle = document.createElement("button");
   toggle.id = "prompt-sidebar-toggle";
-  const isDark = isDarkModeActive();
-  
   toggle.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z"></path><path d="M8 12.5L10.5 15L16 9"></path><path d="M12 2V3.5"></path><path d="M12 20.5V22"></path><path d="M22 12H20.5"></path><path d="M3.5 12H2"></path><path d="M4.92893 4.92893L5.99999 6"></path><path d="M18 18L19.0711 19.0711"></path><path d="M19.0711 4.92893L18 6"></path><path d="M6 18L4.92893 19.0711"></path></svg>`;
   
   toggle.style.cssText = `
@@ -192,17 +231,16 @@ function createToggleButton() {
     padding: 10px; 
     width: 38px; height: 38px;
     display: flex; align-items: center; justify-content: center;
-    background: ${isDark ? 'rgba(40,40,40,0.95)' : 'rgba(255,255,255,0.95)'};
-    border: 1px solid ${isDark ? 'rgba(80,80,80,0.3)' : 'rgba(0,0,0,0.08)'};
     border-radius: 10px; 
-    color: ${isDark ? '#e0e0e0' : '#374151'};
-    box-shadow: 0 2px 8px ${isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)'};
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     cursor: pointer; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    transition: all 0.2s ease-in-out;
+    /* MODIFIED: Changed easing to ease-out */
+    transition: all 0.2s ease-out;
   `;
 
   toggle.addEventListener("click", () => {
     const sidebar = document.getElementById("prompt-tracker-sidebar");
+    const themeToggle = document.getElementById("theme-toggle-button");
     if (!sidebar) {
       injectSidebar();
       return;
@@ -211,45 +249,81 @@ function createToggleButton() {
     
     sidebar.style.right = isOpen ? sidebarHiddenRightPos : "15px"; 
     sidebar.style.pointerEvents = isOpen ? "none" : "auto";
+    
+    if (themeToggle) {
+        themeToggle.style.right = isOpen ? '-100px' : '85px';
+    }
 
     if (isOpen) {
       toggle.classList.remove('prompt-toggle-close');
       toggle.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z"></path><path d="M8 12.5L10.5 15L16 9"></path><path d="M12 2V3.5"></path><path d="M12 20.5V22"></path><path d="M22 12H20.5"></path><path d="M3.5 12H2"></path><path d="M4.92893 4.92893L5.99999 6"></path><path d="M18 18L19.0711 19.0711"></path><path d="M19.0711 4.92893L18 6"></path><path d="M6 18L4.92893 19.0711"></path></svg>`;
-      toggle.style.top = "57px";
-      toggle.style.right = "22px";
+      toggle.style.top = "54px";
+      toggle.style.right = "20px";
       toggle.style.width = "38px";
       toggle.style.height = "38px";
       toggle.style.padding = "10px";
       toggle.style.borderRadius = "10px";
       toggle.style.transform = '';
-      toggle.style.background = isDarkModeActive() ? "rgba(40,40,40,0.95)" : "rgba(255,255,255,0.95)";
-      toggle.style.color = isDarkModeActive() ? "#e0e0e0" : "#374151";
-      toggle.style.border = `1px solid ${isDarkModeActive() ? 'rgba(80,80,80,0.3)' : 'rgba(0,0,0,0.08)'}`;
     } else {
       toggle.classList.add('prompt-toggle-close');
       toggle.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
       toggle.style.top = "22px";
-      toggle.style.right = "38px";
+      toggle.style.right = "40px";
       toggle.style.width = "30px";
       toggle.style.height = "30px";
       toggle.style.padding = "6px";
       toggle.style.borderRadius = "8px";
-      toggle.style.background = isDarkModeActive() ? "rgba(40,40,40,0.95)" : "rgba(255,255,255,0.95)";
-      toggle.style.color = isDarkModeActive() ? "#e0e0e0" : "#374151";
-      toggle.style.border = `1px solid ${isDarkModeActive() ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`;
     }
+    applyTheme(currentTheme);
   });
 
   document.body.appendChild(toggle);
 }
-// ===================================================================================
-// ===== SIDEBAR SCRIPT LOGIC ========================================================
-// ===================================================================================
 
 /**
- * Attaches event listeners and methods to the injected sidebar element.
- * @param {HTMLElement} sidebar The main sidebar div element.
+ * ===== NEW FUNCTION =====
+ * Creates the theme toggle button, positioned next to the close ('X') button.
  */
+/**
+ * ===== NEW FUNCTION =====
+ * Creates the theme toggle button, positioned next to the close ('X') button.
+ */
+function createThemeToggle() {
+    if (document.getElementById("theme-toggle-button")) return;
+
+    const themeToggle = document.createElement("button");
+    themeToggle.id = "theme-toggle-button";
+    themeToggle.title = "Toggle Theme";
+
+    themeToggle.style.cssText = `
+        position: fixed;
+        top: 26px;
+        right: -100px; 
+        z-index: 99999;
+        padding: 5px;
+        width: 24px; height: 24px;
+        display: flex;
+        align-items: center; justify-content: center;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        cursor: pointer; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        /* MODIFIED: Changed easing to ease-out */
+        transition: all 0.3s ease-out;
+    `;
+
+    themeToggle.addEventListener('click', () => {
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        chrome.storage.local.set({ [themeStorageKey]: newTheme });
+        applyTheme(newTheme);
+    });
+
+    document.body.appendChild(themeToggle);
+}
+
+// ===================================================================================
+// ===== SIDEBAR SCRIPT LOGIC (Unchanged) ============================================
+// ===================================================================================
+
 function loadSidebarScript(sidebar) {
   const promptList = sidebar.querySelector('#promptList');
   const promptCountEl = sidebar.querySelector('#promptCount');
@@ -304,13 +378,8 @@ function loadSidebarScript(sidebar) {
   }
 }
 
-/**
- * The main "jump to" function. Finds the prompt in the DOM and scrolls to it.
- * @param {string} promptId The ID of the prompt to find.
- */
 function jumpToPrompt(promptId) {
     let promptElement = document.querySelector(`[data-prompt-id="${promptId}"]`);
-    
     if (!promptElement) {
         const targetPrompt = currentPrompts.find(p => p.id === promptId);
         if (targetPrompt) {
@@ -325,42 +394,27 @@ function jumpToPrompt(promptId) {
             }
         }
     }
-
   if (promptElement) {
-    document.querySelectorAll('.prompt-highlight').forEach(el => {
-        el.classList.remove('prompt-highlight');
-        el.style.backgroundColor = '';
-        el.style.border = '';
-        el.style.borderRadius = '';
-    });
-
     promptElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    
     promptElement.classList.add('prompt-highlight');
     promptElement.style.backgroundColor = 'rgba(59, 130, 246, 0.15)';
     promptElement.style.border = '2px solid rgba(59, 130, 246, 0.4)';
     promptElement.style.borderRadius = '8px';
-
     setTimeout(() => {
         promptElement.classList.remove('prompt-highlight');
         promptElement.style.backgroundColor = '';
         promptElement.style.border = '';
         promptElement.style.borderRadius = '';
     }, 3000);
-    
   } else {
     console.error('Prompt element not found for ID:', promptId);
   }
 }
 
 // ===================================================================================
-// ===== DATA TRACKING & STORAGE =====================================================
+// ===== DATA TRACKING & STORAGE (Unchanged) =========================================
 // ===================================================================================
 
-/**
- * Loads prompts for the given conversation ID from chrome.storage.
- * @param {string} convoId The conversation ID.
- */
 function loadPromptsFromStorage(convoId) {
   chrome.storage.local.get([convoId], (data) => {
     currentPrompts = data[convoId] || [];
@@ -371,25 +425,16 @@ function loadPromptsFromStorage(convoId) {
   });
 }
 
-/**
- * Scans the DOM for user prompts, assigns IDs, and updates storage if changes are found.
- */
 function checkForNewPrompts() {
   const convoId = getConversationId();
   if (!convoId) {
       if (currentConversationId !== null) {
-          // Capture the ID of the conversation we are leaving.
           const oldConvoId = currentConversationId;
-          
-          // Reset the internal state.
           currentConversationId = null;
           currentPrompts = [];
-
-          // *** FIX: Explicitly remove the old conversation's data from storage. ***
           chrome.storage.local.remove([oldConvoId], () => {
               console.log(`Prompt Tracker: Cleaned up storage for deleted conversation: ${oldConvoId}`);
           });
-          
           const sidebar = document.getElementById("prompt-tracker-sidebar");
           if (sidebar?.updatePromptsDisplay) sidebar.updatePromptsDisplay([]);
       }
@@ -433,41 +478,27 @@ function checkForNewPrompts() {
 // ===== OBSERVERS & INITIALIZATION ==================================================
 // ===================================================================================
 
-/**
- * Adjusts the sidebar and toggle based on the main content area's width.
- * This is the primary function for responsive behavior.
- */
-/**
- * Adjusts the sidebar and toggle based on the main content area's width.
- * This is the primary function for responsive behavior.
- */
 function checkAndApplyResponsiveLogic() {
     const sidebar = document.getElementById('prompt-tracker-sidebar');
     const toggle = document.getElementById('prompt-sidebar-toggle');
-    
     const mainContent = document.querySelector('div[class*="rounded-[28px]"]');
 
-    if (!sidebar || !toggle || !mainContent) {
-        return;
-    }
+    if (!sidebar || !toggle || !mainContent) return;
 
     const mainContentWidth = mainContent.offsetWidth;
-    let newSidebarWidth = sidebarDefaultWidth;
-
-    // --- START OF MODIFIED LOGIC ---
-    // This block handles the logic for narrow screens / high zoom.
     if (mainContentWidth < 650) {
-        // First, ensure the toggle button is ALWAYS visible.
         toggle.style.display = 'flex';
-
-        // Check if the sidebar is currently open.
         const isOpen = sidebar.style.right === "15px";
         if (isOpen) {
-            // If it's open, close it by sliding it off-screen.
             sidebar.style.right = sidebarHiddenRightPos; 
             sidebar.style.pointerEvents = "none";
+            const themeToggle = document.getElementById("theme-toggle-button");
+            
+            // MODIFIED: Animate the button off-screen instead of hiding it
+            if (themeToggle) {
+                themeToggle.style.right = '-100px';
+            }
 
-            // We must also reset the toggle button's appearance to its "closed" state.
             toggle.classList.remove('prompt-toggle-close');
             toggle.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z"></path><path d="M8 12.5L10.5 15L16 9"></path><path d="M12 2V3.5"></path><path d="M12 20.5V22"></path><path d="M22 12H20.5"></path><path d="M3.5 12H2"></path><path d="M4.92893 4.92893L5.99999 6"></path><path d="M18 18L19.0711 19.0711"></path><path d="M19.0711 4.92893L18 6"></path><path d="M6 18L4.92893 19.0711"></path></svg>`;
             toggle.style.top = "54px";
@@ -477,33 +508,20 @@ function checkAndApplyResponsiveLogic() {
             toggle.style.padding = "10px";
             toggle.style.borderRadius = "10px";
             toggle.style.transform = '';
-            toggle.style.background = isDarkModeActive() ? "rgba(40,40,40,0.95)" : "rgba(255,255,255,0.95)";
-            toggle.style.color = isDarkModeActive() ? "#e0e0e0" : "#374151";
-            toggle.style.border = `1px solid ${isDarkModeActive() ? 'rgba(80,80,80,0.3)' : 'rgba(0,0,0,0.08)'}`;
+            applyTheme(currentTheme);
         }
-        // Exit the function to prevent the wide-screen logic from running.
-        return;
+        return; 
     }
-    // --- END OF MODIFIED LOGIC ---
     
-    // This logic for wider screens remains the same.
     sidebar.style.display = 'block';
     toggle.style.display = 'flex';
- 
-    sidebar.style.width = newSidebarWidth + 'px';
-
-    sidebarHiddenRightPos = `-${newSidebarWidth + 20}px`;
-
-    const isOpen = sidebar.style.right === "15px";
-    if (!isOpen) {
+    sidebar.style.width = sidebarDefaultWidth + 'px';
+    sidebarHiddenRightPos = `-${sidebarDefaultWidth + 20}px`;
+    if (sidebar.style.right !== "15px") {
         sidebar.style.right = sidebarHiddenRightPos;
     }
 }
 
-
-/**
- * Sets up and starts MutationObservers to watch for DOM changes.
- */
 function startObservers() {
     const mainObserver = new MutationObserver(() => {
         clearTimeout(window.promptTrackerDebounce);
@@ -516,24 +534,35 @@ function startObservers() {
  * The main entry point for the script.
  */
 function main() {
-  injectSidebar();
-  startObservers();
-  
-  const debouncedResizeCheck = () => {
-    setTimeout(checkAndApplyResponsiveLogic, 100);
-  };
-  
-  window.addEventListener('resize', debouncedResizeCheck);
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '0')) {
-      debouncedResizeCheck();
-    }
-  });
-  
-  setTimeout(() => {
-    checkForNewPrompts();
-    checkAndApplyResponsiveLogic();
-  }, 1500);
+    // ===== MODIFIED main() FUNCTION =====
+    // 1. Load the theme from storage first.
+    chrome.storage.local.get([themeStorageKey], (data) => {
+        const savedTheme = data[themeStorageKey] || 'dark'; // Default to dark mode if nothing is saved
+
+        // 2. Inject all UI elements.
+        injectSidebar();
+        startObservers();
+
+        // 3. Apply the loaded (or default) theme to all elements.
+        applyTheme(savedTheme);
+
+        // 4. Set up resize observers and other initial checks.
+        const debouncedResizeCheck = () => {
+            setTimeout(checkAndApplyResponsiveLogic, 100);
+        };
+        
+        window.addEventListener('resize', debouncedResizeCheck);
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && (e.key === '+' || e.key === '-' || e.key === '0')) {
+            debouncedResizeCheck();
+            }
+        });
+        
+        setTimeout(() => {
+            checkForNewPrompts();
+            checkAndApplyResponsiveLogic();
+        }, 1500);
+    });
 }
 
 // Run the script once the page is ready.
