@@ -231,7 +231,7 @@ function createToggleButton() {
   
   toggle.style.cssText = `
     position: fixed; 
-    top: 54px; right: 20px;
+    top: 55px; right: 22px;
     z-index: 99999;
     padding: 10px; 
     width: 38px; height: 38px;
@@ -262,8 +262,8 @@ function createToggleButton() {
     if (isOpen) {
       toggle.classList.remove('prompt-toggle-close');
       toggle.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z"></path><path d="M8 12.5L10.5 15L16 9"></path><path d="M12 2V3.5"></path><path d="M12 20.5V22"></path><path d="M22 12H20.5"></path><path d="M3.5 12H2"></path><path d="M4.92893 4.92893L5.99999 6"></path><path d="M18 18L19.0711 19.0711"></path><path d="M19.0711 4.92893L18 6"></path><path d="M6 18L4.92893 19.0711"></path></svg>`;
-      toggle.style.top = "54px";
-      toggle.style.right = "20px";
+      toggle.style.top = "55px";
+      toggle.style.right = "22px";
       toggle.style.width = "38px";
       toggle.style.height = "38px";
       toggle.style.padding = "10px";
