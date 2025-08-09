@@ -437,6 +437,10 @@ function checkForNewPrompts() {
  * Adjusts the sidebar and toggle based on the main content area's width.
  * This is the primary function for responsive behavior.
  */
+/**
+ * Adjusts the sidebar and toggle based on the main content area's width.
+ * This is the primary function for responsive behavior.
+ */
 function checkAndApplyResponsiveLogic() {
     const sidebar = document.getElementById('prompt-tracker-sidebar');
     const toggle = document.getElementById('prompt-sidebar-toggle');
@@ -450,12 +454,39 @@ function checkAndApplyResponsiveLogic() {
     const mainContentWidth = mainContent.offsetWidth;
     let newSidebarWidth = sidebarDefaultWidth;
 
+    // --- START OF MODIFIED LOGIC ---
+    // This block handles the logic for narrow screens / high zoom.
     if (mainContentWidth < 650) {
-        sidebar.style.display = 'none';
-        toggle.style.display = 'none';
+        // First, ensure the toggle button is ALWAYS visible.
+        toggle.style.display = 'flex';
+
+        // Check if the sidebar is currently open.
+        const isOpen = sidebar.style.right === "15px";
+        if (isOpen) {
+            // If it's open, close it by sliding it off-screen.
+            sidebar.style.right = sidebarHiddenRightPos; 
+            sidebar.style.pointerEvents = "none";
+
+            // We must also reset the toggle button's appearance to its "closed" state.
+            toggle.classList.remove('prompt-toggle-close');
+            toggle.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z"></path><path d="M8 12.5L10.5 15L16 9"></path><path d="M12 2V3.5"></path><path d="M12 20.5V22"></path><path d="M22 12H20.5"></path><path d="M3.5 12H2"></path><path d="M4.92893 4.92893L5.99999 6"></path><path d="M18 18L19.0711 19.0711"></path><path d="M19.0711 4.92893L18 6"></path><path d="M6 18L4.92893 19.0711"></path></svg>`;
+            toggle.style.top = "54px";
+            toggle.style.right = "20px";
+            toggle.style.width = "38px";
+            toggle.style.height = "38px";
+            toggle.style.padding = "10px";
+            toggle.style.borderRadius = "10px";
+            toggle.style.transform = '';
+            toggle.style.background = isDarkModeActive() ? "rgba(40,40,40,0.95)" : "rgba(255,255,255,0.95)";
+            toggle.style.color = isDarkModeActive() ? "#e0e0e0" : "#374151";
+            toggle.style.border = `1px solid ${isDarkModeActive() ? 'rgba(80,80,80,0.3)' : 'rgba(0,0,0,0.08)'}`;
+        }
+        // Exit the function to prevent the wide-screen logic from running.
         return;
     }
+    // --- END OF MODIFIED LOGIC ---
     
+    // This logic for wider screens remains the same.
     sidebar.style.display = 'block';
     toggle.style.display = 'flex';
  
