@@ -104,7 +104,6 @@ body.theme-light .sidebar-header h3 { color: #111827; }
 body.theme-dark .prompt-count { color: #a0a0a0; }
 body.theme-light .prompt-count { color: #6b7280; }
 
-
 /* --- Prompt List & Scrollbar --- */
 .prompt-list-container {
     padding: 0 12px 12px 12px;
@@ -114,12 +113,27 @@ body.theme-light .prompt-count { color: #6b7280; }
     height: calc(100vh - 90px);
     overflow-y: auto;
 }
-.prompt-list-container::-webkit-scrollbar { width: 6px; }
-.prompt-list-container::-webkit-scrollbar-track { background: transparent; }
-body.theme-dark .prompt-list-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); }
-body.theme-light .prompt-list-container::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); }
-body.theme-dark .prompt-list-container::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.35); }
-body.theme-light .prompt-list-container::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.35); }
+.prompt-list-container::-webkit-scrollbar { 
+    width: 6px; 
+}
+.prompt-list-container::-webkit-scrollbar-track { 
+    background: transparent; 
+}
+.prompt-list-container::-webkit-scrollbar-thumb {
+    border-radius: 3px; /* This rounds the edges of the scrollbar thumb */
+}
+body.theme-dark .prompt-list-container::-webkit-scrollbar-thumb { 
+    background: rgba(255, 255, 255, 0.2); 
+}
+body.theme-light .prompt-list-container::-webkit-scrollbar-thumb { 
+    background: rgba(0, 0, 0, 0.2); 
+}
+body.theme-dark .prompt-list-container::-webkit-scrollbar-thumb:hover { 
+    background: rgba(255, 255, 255, 0.35); 
+}
+body.theme-light .prompt-list-container::-webkit-scrollbar-thumb:hover { 
+    background: rgba(0, 0, 0, 0.35); 
+}
 
 
 /* --- Empty State --- */
