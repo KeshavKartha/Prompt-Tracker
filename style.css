@@ -1,0 +1,248 @@
+/* --- Floating Action Buttons --- */
+#prompt-sidebar-toggle,
+#theme-toggle-button {
+    position: fixed;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.2s ease-out;
+}
+
+#prompt-sidebar-toggle {
+    top: 55px;
+    right: 22px;
+    padding: 10px;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+}
+
+#theme-toggle-button {
+    top: 26px;
+    right: -100px; /* Initially off-screen */
+    padding: 5px;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    transition: all 0.3s ease-out;
+}
+
+/* --- Button Hover & Active States --- */
+body.theme-dark #prompt-sidebar-toggle:not(.prompt-toggle-close):hover { background: rgba(55, 55, 55, 0.95) !important; }
+body.theme-light #prompt-sidebar-toggle:not(.prompt-toggle-close):hover { background: rgba(240, 240, 240, 0.95) !important; }
+
+body.theme-dark #theme-toggle-button:hover { background: rgba(70, 70, 70, 0.95) !important; }
+body.theme-light #theme-toggle-button:hover { background: rgba(230, 230, 230, 0.95) !important; }
+
+#theme-toggle-button:hover {
+    transform: scale(1.1);
+}
+
+#prompt-sidebar-toggle.prompt-toggle-close {
+    top: 22px;
+    right: 40px;
+    width: 30px;
+    height: 30px;
+    padding: 6px;
+    border-radius: 8px;
+}
+
+#prompt-sidebar-toggle.prompt-toggle-close:hover {
+    transform: scale(1.05) rotate(90deg);
+    background-color: rgba(239, 68, 68, 0.9) !important;
+    border-color: rgba(239, 68, 68, 0.9) !important;
+}
+
+
+/* --- Main Sidebar --- */
+#prompt-tracker-sidebar {
+    position: fixed;
+    top: 0;
+    height: 100%;
+    background: transparent;
+    border: none;
+    z-index: 9999;
+    pointer-events: none;
+    transition: right 0.3s ease-out;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 12.5px;
+}
+body.theme-dark #prompt-tracker-sidebar { color: #e0e0e0; }
+body.theme-light #prompt-tracker-sidebar { color: #1f2937; }
+
+
+/* --- Sidebar Header --- */
+#prompt-tracker-sidebar .sidebar-header {
+    border-radius: 8px;
+    margin: 12px;
+    margin-bottom: 8px;
+    padding: 14px;
+    position: sticky;
+    top: 12px;
+    z-index: 10;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+body.theme-dark .sidebar-header { background: #121212; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1); }
+body.theme-light .sidebar-header { background: rgba(248, 248, 248, 0.9); border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05); }
+
+.sidebar-header h3 {
+    margin: 0 0 4px 0;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'Figtree', 'Inter', sans-serif;
+}
+body.theme-dark .sidebar-header h3 { color: #f0f0f0; }
+body.theme-light .sidebar-header h3 { color: #111827; }
+
+.prompt-count { font-size: 11.5px; font-weight: 500; }
+body.theme-dark .prompt-count { color: #a0a0a0; }
+body.theme-light .prompt-count { color: #6b7280; }
+
+
+/* --- Prompt List & Scrollbar --- */
+.prompt-list-container {
+    padding: 0 12px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: calc(100vh - 90px);
+    overflow-y: auto;
+}
+.prompt-list-container::-webkit-scrollbar { width: 6px; }
+.prompt-list-container::-webkit-scrollbar-track { background: transparent; }
+body.theme-dark .prompt-list-container::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); }
+body.theme-light .prompt-list-container::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); }
+body.theme-dark .prompt-list-container::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.35); }
+body.theme-light .prompt-list-container::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.35); }
+
+
+/* --- Empty State --- */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    border-radius: 8px;
+    margin: 0 12px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+body.theme-dark .empty-state { color: #9ca3af; background: rgba(30, 30, 30, 0.9); border: 1px solid rgba(255, 255, 255, 0.08); }
+body.theme-light .empty-state { color: #6b7280; background: rgba(248, 248, 248, 0.9); border: 1px solid rgba(0, 0, 0, 0.05); }
+
+.empty-icon { font-size: 32px; margin-bottom: 12px; opacity: 0.6; }
+.empty-text { font-size: 15px; font-weight: 500; margin-bottom: 4px; }
+body.theme-dark .empty-text { color: #d1d5db; }
+body.theme-light .empty-text { color: #374151; }
+
+.empty-subtext { font-size: 12.5px; margin-bottom: 16px; }
+body.theme-dark .empty-subtext { color: #6b7280; }
+body.theme-light .empty-subtext { color: #9ca3af; }
+
+.empty-refresh-hint {
+    font-size: 11.5px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 12px;
+    font-style: italic;
+}
+body.theme-dark .empty-refresh-hint { color: #60a5fa; }
+body.theme-light .empty-refresh-hint { color: #3b82f6; }
+
+
+/* --- Prompt Card --- */
+.prompt-card {
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    overflow: hidden;
+    position: relative;
+    min-height: 25px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+body.theme-dark .prompt-card { background: rgba(40, 40, 40, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
+body.theme-light .prompt-card { background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
+
+body.theme-dark .prompt-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25); border-color: rgba(255, 255, 255, 0.12); background: rgba(45, 45, 45, 0.9); }
+body.theme-light .prompt-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); border-color: rgba(0, 0, 0, 0.08); background: rgba(255, 255, 255, 0.9); }
+
+.prompt-content {
+    font-family: 'Figtree', 'Inter', sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    position: relative;
+    min-height: 20px;
+    max-height: 100px;
+    overflow: hidden;
+}
+body.theme-dark .prompt-content { color: #e0e0e0; }
+body.theme-light .prompt-content { color: #374151; }
+
+.prompt-content::before { content: attr(data-number) ". "; font-weight: 600; margin-right: 4px; }
+body.theme-dark .prompt-content::before { color: #a0a0a0; }
+body.theme-light .prompt-content::before { color: #888888; }
+
+
+/* --- Card Actions & Toast --- */
+.prompt-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 6px;
+    margin-top: auto;
+    flex-shrink: 0;
+    min-height: 24px;
+    padding: 4px 2px 0 0;
+}
+
+.copy-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+}
+body.theme-dark .copy-btn { color: #a0a0a0; }
+body.theme-light .copy-btn { color: #6b7280; }
+
+body.theme-dark .copy-btn:hover { background: rgba(255, 255, 255, 0.05); color: #e0e0e0; opacity: 1; }
+body.theme-light .copy-btn:hover { background: rgba(0, 0, 0, 0.05); color: #374151; opacity: 1; }
+
+.copy-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #10b981;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 500;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 10000;
+}
+.copy-toast.show {
+    transform: translateY(0);
+    opacity: 1;
+}
