@@ -94,15 +94,38 @@ function updateAndCheckForDeletedConversations() {
  * Sets up MutationObservers to watch for DOM changes.
  */
 function startObservers() {
-  // Observer 1: Watches the whole page for new prompts being added.
+  // Observer 1: Watches for new prompts being added.
   const promptObserver = new MutationObserver(() => {
-    // Use a debounce to prevent firing too rapidly.
+    // Use a shorter debounce for more responsive updates
     clearTimeout(promptObserver.debounce);
-    promptObserver.debounce = setTimeout(checkForNewPrompts, 250);
+    promptObserver.debounce = setTimeout(checkForNewPrompts, 100);
   });
-  promptObserver.observe(document.body, { childList: true, subtree: true });
+  
+  // Watch specifically for user message containers for better performance
+  const mainContent = document.querySelector('main') || document.body;
+  promptObserver.observe(mainContent, { 
+    childList: true, 
+    subtree: true,
+    attributes: false,
+    characterData: false
+  });
 
-  // Observer 2: Watches the chat history list for deletions.
+  // Observer 2: Watch for immediate changes in conversation area
+  const conversationContainer = document.querySelector('[role="main"]') || document.querySelector('main');
+  if (conversationContainer) {
+    const conversationObserver = new MutationObserver(() => {
+      clearTimeout(conversationObserver.debounce);
+      conversationObserver.debounce = setTimeout(checkForNewPrompts, 50);
+    });
+    conversationObserver.observe(conversationContainer, {
+      childList: true,
+      subtree: true,
+      attributes: false,
+      characterData: false
+    });
+  }
+
+  // Observer 3: Watches the chat history list for deletions.
   const chatListContainer = document.querySelector('nav[aria-label="Chat history"]');
   if (chatListContainer) {
     const chatListObserver = new MutationObserver(updateAndCheckForDeletedConversations);
