@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "Prompt Tracker",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Tracks your prompts within ChatGPT conversations for easy navigation.",
     "permissions": [
         "storage"
@@ -12,6 +12,15 @@
         "48": "icons/icon48.png",
         "128": "icons/icon128.png"
     },
+    "web_accessible_resources": [
+        {
+            "resources": ["sidebar.html", "templates.html", "icons.html"],
+            "matches": [
+                "https://chatgpt.com/*",
+                "https://chat.openai.com/*"
+            ]
+        }
+    ],
     "content_scripts": [
         {
             "matches": [

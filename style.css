@@ -1,61 +1,181 @@
 /* --- Floating Action Buttons --- */
 #prompt-sidebar-toggle,
+#prompt-sidebar-close,
 #theme-toggle-button {
     position: fixed;
     z-index: 99999;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
     align-items: center;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
     justify-content: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     cursor: pointer;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+    -webkit-transition: all 0.2s ease-out;
+    -o-transition: all 0.2s ease-out;
     transition: all 0.2s ease-out;
 }
 
+/* Open Button */
 #prompt-sidebar-toggle {
-    top: 55px;
+    top: 62px;
     right: 22px;
     padding: 10px;
     width: 38px;
     height: 38px;
     border-radius: 10px;
+    opacity: 1;
+    -webkit-transform: scale(1);
+    -ms-transform: scale(1);
+    transform: scale(1);
 }
 
-#theme-toggle-button {
-    top: 26px;
-    right: -100px; /* Initially off-screen */
-    padding: 5px;
-    width: 24px;
-    height: 24px;
-    border-radius: 8px;
-    transition: all 0.3s ease-out;
+#prompt-sidebar-toggle svg {
+    -webkit-transition: -webkit-transform 0.2s ease-out;
+    transition: -webkit-transform 0.2s ease-out;
+    -o-transition: transform 0.2s ease-out;
+    transition: transform 0.2s ease-out;
+    transition: transform 0.2s ease-out, -webkit-transform 0.2s ease-out;
 }
 
-/* --- Button Hover & Active States --- */
-body.theme-dark #prompt-sidebar-toggle:not(.prompt-toggle-close):hover { background: rgba(55, 55, 55, 0.95) !important; }
-body.theme-light #prompt-sidebar-toggle:not(.prompt-toggle-close):hover { background: rgba(240, 240, 240, 0.95) !important; }
-
-body.theme-dark #theme-toggle-button:hover { background: rgba(70, 70, 70, 0.95) !important; }
-body.theme-light #theme-toggle-button:hover { background: rgba(230, 230, 230, 0.95) !important; }
-
-#theme-toggle-button:hover {
-    transform: scale(1.1);
+#prompt-sidebar-toggle.hidden {
+    opacity: 0;
+    -webkit-transform: scale(0.8);
+    -ms-transform: scale(0.8);
+    transform: scale(0.8);
+    pointer-events: none;
 }
 
-#prompt-sidebar-toggle.prompt-toggle-close {
+/* Close Button */
+#prompt-sidebar-close {
     top: 22px;
     right: 40px;
     width: 30px;
     height: 30px;
     padding: 6px;
     border-radius: 8px;
+    opacity: 0;
+    -webkit-transform: scale(0.8);
+    -ms-transform: scale(0.8);
+    transform: scale(0.8);
+    pointer-events: none;
 }
 
-#prompt-sidebar-toggle.prompt-toggle-close:hover {
+#prompt-sidebar-close.visible {
+    opacity: 1;
+    -webkit-transform: scale(1);
+    -ms-transform: scale(1);
+    transform: scale(1);
+    pointer-events: auto;
+}
+
+#theme-toggle-button {
+    top: 22px;
+    right: -100px; /* Initially off-screen */
+    padding: 6px;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    -webkit-transition: all 0.2s ease-out;
+    -o-transition: all 0.2s ease-out;
+    transition: all 0.2s ease-out;
+}
+
+/* --- Button Hover & Click States --- */
+#prompt-sidebar-toggle:hover {
+    -webkit-transform: scale(1.05) rotate(90deg);
+    -ms-transform: scale(1.05) rotate(90deg);
     transform: scale(1.05) rotate(90deg);
-    background-color: rgba(239, 68, 68, 0.9) !important;
-    border-color: rgba(239, 68, 68, 0.9) !important;
+}
+
+#prompt-sidebar-toggle:hover svg {
+    -webkit-transform: rotate(-90deg);
+    -ms-transform: rotate(-90deg);
+    transform: rotate(-90deg);
+}
+
+#prompt-sidebar-toggle:active {
+    -webkit-transform: scale(0.95) rotate(90deg);
+    -ms-transform: scale(0.95) rotate(90deg);
+    transform: scale(0.95) rotate(90deg);
+}
+
+#prompt-sidebar-toggle:active svg {
+    -webkit-transform: rotate(-90deg);
+    -ms-transform: rotate(-90deg);
+    transform: rotate(-90deg);
+}
+
+#prompt-sidebar-close:hover {
+    -webkit-transform: scale(1.05) rotate(90deg);
+    -ms-transform: scale(1.05) rotate(90deg);
+    transform: scale(1.05) rotate(90deg);
+}
+
+#prompt-sidebar-close:active {
+    -webkit-transform: scale(0.95) rotate(90deg);
+    -ms-transform: scale(0.95) rotate(90deg);
+    transform: scale(0.95) rotate(90deg);
+}
+
+body.theme-dark #prompt-sidebar-toggle:hover { 
+    background: rgba(34, 197, 94, 0.25) !important; 
+    border-color: rgba(34, 197, 94, 0.5) !important; 
+}
+body.theme-light #prompt-sidebar-toggle:hover { 
+    background: rgba(220, 252, 231, 0.8) !important; 
+    border-color: rgba(34, 197, 94, 0.3) !important; 
+}
+
+body.theme-dark #prompt-sidebar-close:hover { 
+    background: rgba(239, 68, 68, 0.25) !important; 
+    border-color: rgba(239, 68, 68, 0.5) !important; 
+}
+body.theme-light #prompt-sidebar-close:hover { 
+    background: rgba(252, 165, 165, 0.9) !important; 
+    border-color: rgba(220, 38, 38, 0.5) !important; 
+}
+
+body.theme-dark #theme-toggle-button:hover { background: rgba(70, 70, 70, 0.95) !important; }
+body.theme-light #theme-toggle-button:hover { background: rgba(230, 230, 230, 0.95) !important; }
+
+/* --- Theme-based Button Styling --- */
+body.theme-dark #prompt-sidebar-toggle,
+body.theme-dark #prompt-sidebar-close {
+    background: rgba(40, 40, 40, 0.95);
+    color: #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body.theme-light #prompt-sidebar-toggle,
+body.theme-light #prompt-sidebar-close {
+    background: rgba(255, 255, 255, 0.95);
+    color: #374151;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+body.theme-dark #theme-toggle-button {
+    background: rgba(40, 40, 40, 0.95);
+    color: #e0e0e0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body.theme-light #theme-toggle-button {
+    background: rgba(255, 255, 255, 0.95);
+    color: #374151;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+#theme-toggle-button:hover {
+    -webkit-transform: scale(1.1);
+    -ms-transform: scale(1.1);
+    transform: scale(1.1);
 }
 
 
@@ -68,9 +188,19 @@ body.theme-light #theme-toggle-button:hover { background: rgba(230, 230, 230, 0.
     border: none;
     z-index: 9999;
     pointer-events: none;
-    transition: right 0.3s ease-out;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-transition: right 0.15s ease-out;
+    -o-transition: right 0.15s ease-out;
+    transition: right 0.15s ease-out;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
     font-size: 12.5px;
+}
+
+#prompt-tracker-sidebar.bounce-in {
+    -webkit-animation: sidebarBounceIn 0.4s ease-out;
+    animation: sidebarBounceIn 0.4s ease-out;
+    -webkit-transition: none;
+    -o-transition: none;
+    transition: none;
 }
 body.theme-dark #prompt-tracker-sidebar { color: #e0e0e0; }
 body.theme-light #prompt-tracker-sidebar { color: #1f2937; }
@@ -95,7 +225,7 @@ body.theme-light .sidebar-header { background: rgba(248, 248, 248, 0.9); border:
     margin: 0 0 4px 0;
     font-size: 15px;
     font-weight: 600;
-    font-family: 'Figtree', 'Inter', sans-serif;
+    font-family: 'Figtree', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
 }
 body.theme-dark .sidebar-header h3 { color: #f0f0f0; }
 body.theme-light .sidebar-header h3 { color: #111827; }
@@ -107,11 +237,30 @@ body.theme-light .prompt-count { color: #6b7280; }
 /* --- Prompt List & Scrollbar --- */
 .prompt-list-container {
     padding: 0 12px 12px 12px;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
     flex-direction: column;
-    gap: 12px;
+    gap: 6px;
+    height: -webkit-calc(100vh - 90px);
+    height: -moz-calc(100vh - 90px);
     height: calc(100vh - 90px);
     overflow-y: auto;
+    scrollbar-width: thin; /* Firefox */
+}
+
+/* Fallback for browsers that don't support gap */
+.prompt-list-container > * + * {
+    margin-top: 6px;
+}
+body.theme-dark .prompt-list-container {
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent; /* Firefox */
+}
+body.theme-light .prompt-list-container {
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent; /* Firefox */
 }
 .prompt-list-container::-webkit-scrollbar { 
     width: 6px; 
@@ -120,7 +269,7 @@ body.theme-light .prompt-count { color: #6b7280; }
     background: transparent; 
 }
 .prompt-list-container::-webkit-scrollbar-thumb {
-    border-radius: 3px; /* This rounds the edges of the scrollbar thumb */
+    border-radius: 3px;
 }
 body.theme-dark .prompt-list-container::-webkit-scrollbar-thumb { 
     background: rgba(255, 255, 255, 0.2); 
@@ -175,12 +324,20 @@ body.theme-light .empty-refresh-hint { color: #3b82f6; }
     border-radius: 8px;
     padding: 12px;
     cursor: pointer;
+    -webkit-transition: all 0.15s ease;
+    -o-transition: all 0.15s ease;
     transition: all 0.15s ease;
     overflow: hidden;
     position: relative;
     min-height: 25px;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+    -ms-flex-direction: column;
     flex-direction: column;
+    -ms-flex-negative: 0;
     flex-shrink: 0;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -188,11 +345,11 @@ body.theme-light .empty-refresh-hint { color: #3b82f6; }
 body.theme-dark .prompt-card { background: rgba(40, 40, 40, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); }
 body.theme-light .prompt-card { background: rgba(255, 255, 255, 0.85); border: 1px solid rgba(0, 0, 0, 0.05); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); }
 
-body.theme-dark .prompt-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25); border-color: rgba(255, 255, 255, 0.12); background: rgba(45, 45, 45, 0.9); }
-body.theme-light .prompt-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); border-color: rgba(0, 0, 0, 0.08); background: rgba(255, 255, 255, 0.9); }
+body.theme-dark .prompt-card:hover { -webkit-transform: translateY(-1px); -ms-transform: translateY(-1px); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25); border-color: rgba(255, 255, 255, 0.12); background: rgba(45, 45, 45, 0.9); }
+body.theme-light .prompt-card:hover { -webkit-transform: translateY(-1px); -ms-transform: translateY(-1px); transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); border-color: rgba(0, 0, 0, 0.08); background: rgba(255, 255, 255, 0.9); }
 
 .prompt-content {
-    font-family: 'Figtree', 'Inter', sans-serif;
+    font-family: 'Figtree', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
     font-size: 14px;
     line-height: 1.5;
     white-space: pre-wrap;
@@ -212,14 +369,26 @@ body.theme-light .prompt-content::before { color: #888888; }
 
 /* --- Card Actions & Toast --- */
 .prompt-actions {
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
+    -webkit-box-pack: end;
+    -ms-flex-pack: end;
     justify-content: flex-end;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
     align-items: center;
     gap: 6px;
     margin-top: auto;
+    -ms-flex-negative: 0;
     flex-shrink: 0;
     min-height: 24px;
     padding: 4px 2px 0 0;
+}
+
+/* Fallback for browsers that don't support gap */
+.prompt-actions > * + * {
+    margin-left: 6px;
 }
 
 .copy-btn {
@@ -228,9 +397,17 @@ body.theme-light .prompt-content::before { color: #888888; }
     padding: 4px;
     border-radius: 4px;
     cursor: pointer;
+    -webkit-transition: all 0.15s ease;
+    -o-transition: all 0.15s ease;
     transition: all 0.15s ease;
+    display: -webkit-box;
+    display: -ms-flexbox;
     display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
     align-items: center;
+    -webkit-box-pack: center;
+    -ms-flex-pack: center;
     justify-content: center;
     opacity: 0.7;
 }
@@ -240,23 +417,119 @@ body.theme-light .copy-btn { color: #6b7280; }
 body.theme-dark .copy-btn:hover { background: rgba(255, 255, 255, 0.05); color: #e0e0e0; opacity: 1; }
 body.theme-light .copy-btn:hover { background: rgba(0, 0, 0, 0.05); color: #374151; opacity: 1; }
 
-.copy-toast {
+/* --- Copy Toast Animations --- */
+@-webkit-keyframes slideInUp {
+    from {
+        -webkit-transform: translateY(100%);
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        -webkit-transform: translateY(100%);
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@-webkit-keyframes slideOutDown {
+    from {
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        -webkit-transform: translateY(100%);
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+@keyframes slideOutDown {
+    from {
+        -webkit-transform: translateY(0);
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        -webkit-transform: translateY(100%);
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+/* --- Sidebar Bounce Animation --- */
+@-webkit-keyframes sidebarBounceIn {
+    0% { right: -320px; }
+    60% { right: 20px; }
+    80% { right: 10px; }
+    100% { right: 15px; }
+}
+
+@keyframes sidebarBounceIn {
+    0% { right: -320px; }
+    60% { right: 20px; }
+    80% { right: 10px; }
+    100% { right: 15px; }
+}
+
+/* --- Copy Toast Styles --- */
+.prompt-copy-toast {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: #10b981;
+    background: #4CAF50;
     color: white;
-    padding: 12px 16px;
+    padding: 12px 20px;
     border-radius: 8px;
-    font-size: 12.5px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    z-index: 10001;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    font-size: 14px;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transform: translateY(100px);
-    opacity: 0;
-    transition: all 0.3s ease;
-    z-index: 10000;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-align: center;
+    -ms-flex-align: center;
+    align-items: center;
+    gap: 8px;
+    -webkit-animation: slideInUp 0.3s ease-out;
+    animation: slideInUp 0.3s ease-out;
 }
-.copy-toast.show {
-    transform: translateY(0);
-    opacity: 1;
+
+/* Fallback for browsers that don't support gap */
+.prompt-copy-toast > * + * {
+    margin-left: 8px;
+}
+
+/* --- Prompt Highlight Animations --- */
+[data-prompt-id] {
+    -webkit-transition: all 0.2s ease-out;
+    -o-transition: all 0.2s ease-out;
+    transition: all 0.2s ease-out;
+}
+
+.prompt-highlight {
+    border: 3px solid #007acc !important;
+    -webkit-transform: scale(1.05);
+    -ms-transform: scale(1.05);
+    transform: scale(1.05);
+    -webkit-transition: all 0.2s ease-out;
+    -o-transition: all 0.2s ease-out;
+    transition: all 0.2s ease-out;
+    background-color: rgba(0, 122, 204, 0.1) !important;
+    border-radius: 8px !important;
 }

@@ -1,212 +1,407 @@
 /**
- * @file Manages all UI creation, injection, and DOM event handling.
+ * @file Simplified UI management for Prompt Tracker extension.
  */
 
 /**
- * Applies the selected theme ('dark' or 'light') to the UI.
- * @param {string} theme The theme to apply.
+ * Applies theme to UI elements.
  */
-function applyTheme(theme) {
+async function applyTheme(theme) {
   currentTheme = theme;
   const isDark = theme === 'dark';
-
   document.body.classList.remove('theme-dark', 'theme-light');
   document.body.classList.add(isDark ? 'theme-dark' : 'theme-light');
 
-  const mainToggle = document.getElementById("prompt-sidebar-toggle");
   const themeToggle = document.getElementById("theme-toggle-button");
-
   if (themeToggle) {
-    themeToggle.innerHTML = isDark
-      ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`
-      : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`;
-    themeToggle.style.background = isDark ? "rgba(40,40,40,0.95)" : "rgba(255,255,255,0.95)";
-    themeToggle.style.color = isDark ? "#e0e0e0" : "#374151";
-    themeToggle.style.border = `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)'}`;
-  }
-
-  if (mainToggle) {
-    const isOpen = mainToggle.classList.contains('prompt-toggle-close');
-    mainToggle.style.background = isDark ? 'rgba(40,40,40,0.95)' : 'rgba(255,255,255,0.95)';
-    mainToggle.style.color = isDark ? '#e0e0e0' : '#374151';
-    mainToggle.style.border = `1px solid ${isDark
-      ? (isOpen ? 'rgba(255,255,255,0.2)' : 'rgba(80,80,80,0.3)')
-      : (isOpen ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.08)')
-    }`;
+    const icons = await loadIcons();
+    themeToggle.innerHTML = icons ? (isDark ? icons.themeSun : icons.themeMoon) : (isDark ? "☀" : "🌙");
   }
 }
 
 /**
- * Creates and injects the main sidebar element into the DOM.
+ * Injects sidebar from external HTML.
  */
-function injectSidebar() {
+async function injectSidebar() {
   if (document.getElementById("prompt-tracker-sidebar")) return;
-  const sidebar = document.createElement("div");
-  sidebar.id = "prompt-tracker-sidebar";
-  sidebar.style.width = `${SIDEBAR_DEFAULT_WIDTH}px`;
-  sidebar.style.right = sidebarHiddenRightPos;
-  sidebar.innerHTML = `
-    <div class="sidebar-header">
-      <h3>Previous Prompts</h3>
-      <div class="prompt-count"><span id="promptCount">0</span> prompts</div>
-    </div>
-    <div id="promptList" class="prompt-list-container"></div>
-    <div id="copyToast" class="copy-toast"><span>✓ Copied to clipboard!</span></div>
-  `;
-  document.body.appendChild(sidebar);
+
+  try {
+    const response = await fetch(chrome.runtime.getURL('sidebar.html'));
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const sidebar = doc.querySelector('#prompt-tracker-sidebar');
+    
+    if (sidebar) {
+      sidebar.style.width = `${SIDEBAR_DEFAULT_WIDTH}px`;
+      sidebar.style.right = sidebarHiddenRightPos;
+      document.body.appendChild(sidebar);
+    }
+  } catch (error) {
+    // Silently fail for production
+  }
 }
 
 /**
- * Creates the floating toggle button to show/hide the sidebar.
+ * Loads icons from external file.
  */
-function createToggleButton() {
-  if (document.getElementById("prompt-sidebar-toggle")) return;
+async function loadIcons() {
+  if (window.promptTrackerIcons) return window.promptTrackerIcons;
+  
+  try {
+    const response = await fetch(chrome.runtime.getURL('icons.html'));
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    window.promptTrackerIcons = {
+      toggleOpen: doc.querySelector('.toggle-open-icon')?.innerHTML,
+      toggleClose: doc.querySelector('.toggle-close-icon')?.innerHTML,
+      themeSun: doc.querySelector('.theme-sun-icon')?.innerHTML,
+      themeMoon: doc.querySelector('.theme-moon-icon')?.innerHTML
+    };
+    
+    return window.promptTrackerIcons;
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * Creates toggle button (open).
+ */
+async function createToggleButton() {
+  const existing = document.getElementById("prompt-sidebar-toggle");
+  if (existing) existing.remove();
+  
   const toggle = document.createElement("button");
   toggle.id = "prompt-sidebar-toggle";
-  toggle.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z"></path><path d="M8 12.5L10.5 15L16 9"></path><path d="M12 2V3.5"></path><path d="M12 20.5V22"></path><path d="M22 12H20.5"></path><path d="M3.5 12H2"></path><path d="M4.92893 4.92893L5.99999 6"></path><path d="M18 18L19.0711 19.0711"></path><path d="M19.0711 4.92893L18 6"></path><path d="M6 18L4.92893 19.0711"></path></svg>`;
-  toggle.addEventListener("click", handleToggleSidebar);
+  
+  const icons = await loadIcons();
+  toggle.innerHTML = icons?.toggleOpen || "☰";
+  
+  toggle.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleOpenSidebar();
+  });
+  
   document.body.appendChild(toggle);
 }
 
 /**
- * Creates the theme toggle button.
+ * Creates close button.
  */
-function createThemeToggle() {
-    if (document.getElementById("theme-toggle-button")) return;
-    const themeToggle = document.createElement("button");
-    themeToggle.id = "theme-toggle-button";
-    themeToggle.title = "Toggle Theme";
-    themeToggle.addEventListener('click', handleThemeToggle);
-    document.body.appendChild(themeToggle);
+async function createCloseButton() {
+  const existing = document.getElementById("prompt-sidebar-close");
+  if (existing) existing.remove();
+  
+  const close = document.createElement("button");
+  close.id = "prompt-sidebar-close";
+  
+  const icons = await loadIcons();
+  close.innerHTML = icons?.toggleClose || "✕";
+  
+  close.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleCloseSidebar();
+  });
+  
+  document.body.appendChild(close);
 }
 
 /**
- * Handles the logic for opening and closing the sidebar.
+ * Creates theme toggle button.
  */
-function handleToggleSidebar() {
-    const sidebar = document.getElementById("prompt-tracker-sidebar");
-    const mainToggle = document.getElementById("prompt-sidebar-toggle");
-    const themeToggle = document.getElementById("theme-toggle-button");
-    if (!sidebar || !mainToggle || !themeToggle) return;
+async function createThemeToggle() {
+  const existing = document.getElementById("theme-toggle-button");
+  if (existing) existing.remove();
+  
+  const themeToggle = document.createElement("button");
+  themeToggle.id = "theme-toggle-button";
+  themeToggle.title = "Toggle Theme";
+  themeToggle.addEventListener('click', handleThemeToggle);
+  document.body.appendChild(themeToggle);
+}
 
-    const isOpen = sidebar.style.right === "15px";
-
-    sidebar.style.right = isOpen ? sidebarHiddenRightPos : "15px";
-    sidebar.style.pointerEvents = isOpen ? "none" : "auto";
-    themeToggle.style.right = isOpen ? '-100px' : '85px';
-
-    if (isOpen) {
-        mainToggle.classList.remove('prompt-toggle-close');
-        mainToggle.innerHTML = `<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z"></path><path d="M8 12.5L10.5 15L16 9"></path><path d="M12 2V3.5"></path><path d="M12 20.5V22"></path><path d="M22 12H20.5"></path><path d="M3.5 12H2"></path><path d="M4.92893 4.92893L5.99999 6"></path><path d="M18 18L19.0711 19.0711"></path><path d="M19.0711 4.92893L18 6"></path><path d="M6 18L4.92893 19.0711"></path></svg>`;
-        mainToggle.style.transform = ''; // Reset transform
-    } else {
-        mainToggle.classList.add('prompt-toggle-close');
-        mainToggle.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+/**
+ * Handles opening the sidebar.
+ */
+async function handleOpenSidebar() {
+  if (window.promptTrackerToggling) return;
+  window.promptTrackerToggling = true;
+  
+  try {
+    let sidebar = document.getElementById("prompt-tracker-sidebar");
+    if (!sidebar) {
+      await injectSidebar();
+      sidebar = document.getElementById("prompt-tracker-sidebar");
     }
-    applyTheme(currentTheme);
+    
+    const openButton = document.getElementById("prompt-sidebar-toggle");
+    const closeButton = document.getElementById("prompt-sidebar-close");
+    const themeToggle = document.getElementById("theme-toggle-button");
+    
+    if (!sidebar || !openButton || !closeButton) return;
+    
+    // Hide open button
+    openButton.classList.add('hidden');
+    
+    // Trigger bounce animation and show sidebar
+    sidebar.classList.add('bounce-in');
+    sidebar.style.right = "15px";
+    sidebar.style.pointerEvents = "auto";
+    if (themeToggle) {
+      themeToggle.style.right = '75px';
+    }
+    
+    // Remove bounce class after animation completes
+    setTimeout(() => {
+      sidebar.classList.remove('bounce-in');
+    }, 400);
+    
+    // Show close button with slight delay for better visual flow
+    setTimeout(() => {
+      closeButton.classList.add('visible');
+    }, 100);
+    
+    await applyTheme(currentTheme);
+  } finally {
+    window.promptTrackerToggling = false;
+  }
 }
 
 /**
- * Handles the theme toggle button click.
+ * Handles closing the sidebar.
+ */
+async function handleCloseSidebar() {
+  if (window.promptTrackerToggling) return;
+  window.promptTrackerToggling = true;
+  
+  try {
+    const sidebar = document.getElementById("prompt-tracker-sidebar");
+    const openButton = document.getElementById("prompt-sidebar-toggle");
+    const closeButton = document.getElementById("prompt-sidebar-close");
+    const themeToggle = document.getElementById("theme-toggle-button");
+    
+    if (!sidebar || !openButton || !closeButton) return;
+    
+    // Hide close button and theme toggle
+    closeButton.classList.remove('visible');
+    if (themeToggle) {
+      themeToggle.style.right = '-100px';
+    }
+    
+    // Hide sidebar
+    sidebar.style.right = sidebarHiddenRightPos;
+    sidebar.style.pointerEvents = "none";
+    
+    // Show open button
+    setTimeout(() => {
+      openButton.classList.remove('hidden');
+    }, 100);
+    
+    await applyTheme(currentTheme);
+  } finally {
+    window.promptTrackerToggling = false;
+  }
+}
+
+/**
+ * Handles theme toggle.
  */
 function handleThemeToggle() {
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    chrome.storage.local.set({ [THEME_STORAGE_KEY]: newTheme }, () => {
-        applyTheme(newTheme);
-    });
-}
-
-/**
- * Scrolls the main page to the corresponding prompt element and highlights it.
- * @param {string} promptId The ID of the prompt to jump to.
- */
-function jumpToPrompt(promptId) {
-  let promptElement = document.querySelector(`[data-prompt-id="${promptId}"]`);
-  if (!promptElement) {
-    const targetPrompt = currentPrompts.find(p => p.id === promptId);
-    if (targetPrompt) {
-      const allUserMessages = document.querySelectorAll('div[data-message-author-role="user"]');
-      for (const msg of allUserMessages) {
-        if (msg.innerText.trim() === targetPrompt.content) {
-          promptElement = msg;
-          msg.dataset.promptId = promptId;
-          promptIdMap.set(msg, promptId);
-          break;
-        }
-      }
-    }
-  }
-
-  if (promptElement) {
-    promptElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    promptElement.style.transition = 'background-color 0.3s ease, border 0.3s ease';
-    promptElement.style.backgroundColor = 'rgba(59, 130, 246, 0.15)';
-    promptElement.style.border = '2px solid rgba(59, 130, 246, 0.4)';
-    promptElement.style.borderRadius = '8px';
-    setTimeout(() => {
-        promptElement.style.backgroundColor = '';
-        promptElement.style.border = '';
-        promptElement.style.borderRadius = '';
-    }, 3000);
-  } else {
-    console.error('Prompt Tracker: Could not find element for prompt ID:', promptId);
-  }
-}
-
-/**
- * Shows a temporary "Copied!" toast notification.
- */
-function showCopyToast() {
-  const copyToast = document.getElementById('copyToast');
-  if (!copyToast) return;
-  copyToast.classList.add('show');
-  setTimeout(() => copyToast.classList.remove('show'), 2000);
-}
-
-/**
- * Attaches click listeners to prompt cards and their copy buttons.
- */
-function attachCardListeners() {
-  const promptList = document.getElementById('promptList');
-  if (!promptList) return;
-
-  promptList.addEventListener('click', (e) => {
-    const card = e.target.closest('.prompt-card');
-    if (!card) return;
-
-    const copyBtn = e.target.closest('.copy-btn');
-    if (copyBtn) {
-      e.stopPropagation();
-      const content = decodeURIComponent(copyBtn.dataset.prompt);
-      navigator.clipboard.writeText(content).then(showCopyToast);
-    } else {
-      jumpToPrompt(card.dataset.targetPrompt);
-    }
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  chrome.storage.local.set({ [THEME_STORAGE_KEY]: newTheme }, () => {
+    applyTheme(newTheme);
   });
 }
 
 /**
- * Renders the list of prompts inside the sidebar.
- * @param {Array<Object>} prompts The array of prompt objects to display.
+ * Adds click-outside handler.
  */
-function updatePromptsDisplay(prompts) {
+function addClickOutsideHandler() {
+  if (window.promptTrackerClickListener) {
+    document.removeEventListener('click', window.promptTrackerClickListener);
+  }
+  
+  const handler = (e) => {
+    if (window.promptTrackerToggling) return;
+    
+    const sidebar = document.getElementById("prompt-tracker-sidebar");
+    if (!sidebar || sidebar.style.right !== "15px") return;
+    
+    const isClickOutside = !sidebar.contains(e.target) && 
+                          !e.target.closest("#prompt-sidebar-toggle") &&
+                          !e.target.closest("#prompt-sidebar-close") &&
+                          !e.target.closest("#theme-toggle-button");
+    
+    if (isClickOutside) handleCloseSidebar();
+  };
+  
+  document.addEventListener('click', handler);
+  window.promptTrackerClickListener = handler;
+}
+
+/**
+ * Main initialization function.
+ */
+async function initializeExtensionUI() {
+  // Remove existing listeners
+  if (window.promptTrackerClickListener) {
+    document.removeEventListener('click', window.promptTrackerClickListener);
+    window.promptTrackerClickListener = null;
+  }
+  
+  // Load resources and create UI
+  await loadIcons();
+  await injectSidebar();
+  await createToggleButton();
+  await createCloseButton();
+  await createThemeToggle();
+  addClickOutsideHandler();
+  
+  return true;
+}
+
+// Keep the rest of the functions for templates and display
+async function loadTemplates() {
+  if (window.promptTrackerTemplates) return window.promptTrackerTemplates;
+  
+  try {
+    const response = await fetch(chrome.runtime.getURL('templates.html'));
+    const html = await response.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    
+    window.promptTrackerTemplates = {
+      emptyState: doc.querySelector('.empty-state-template')?.innerHTML,
+      promptCard: doc.querySelector('.prompt-card-template')?.innerHTML
+    };
+    
+    return window.promptTrackerTemplates;
+  } catch (error) {
+    return null;
+  }
+}
+
+async function updatePromptsDisplay(prompts) {
   const promptList = document.getElementById('promptList');
   const promptCountEl = document.getElementById('promptCount');
   if (!promptList || !promptCountEl) return;
 
   promptCountEl.textContent = prompts.length;
-
   if (prompts.length === 0) {
-    promptList.innerHTML = `<div class="empty-state"><div class="empty-icon">💭</div><div class="empty-text">No prompts yet</div><div class="empty-subtext">Start a conversation to see your prompts here.</div><div class="empty-refresh-hint">💡 If prompts don't appear, try refreshing the page.</div></div>`;
+    const templates = await loadTemplates();
+    promptList.innerHTML = templates?.emptyState || '<div class="empty-state">No prompts yet</div>';
   } else {
-    promptList.innerHTML = prompts.map((prompt, index) => `
-      <div class="prompt-card" data-target-prompt="${prompt.id}" title="Click to jump to this prompt">
-        <div class="prompt-content" data-number="${index + 1}">${prompt.content}</div>
-        <div class="prompt-actions">
-          <button class="copy-btn" title="Copy prompt" data-prompt="${encodeURIComponent(prompt.content)}">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-          </button>
-        </div>
-      </div>`).join('');
+    const templates = await loadTemplates();
+    if (templates?.promptCard) {
+      const promptCards = prompts.map((prompt, index) => {
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = templates.promptCard;
+        
+        const card = tempDiv.querySelector('.prompt-card');
+        const content = tempDiv.querySelector('.prompt-content');
+        const copyBtn = tempDiv.querySelector('.copy-btn');
+        
+        card.setAttribute('data-target-prompt', prompt.id);
+        content.setAttribute('data-number', index + 1);
+        content.textContent = prompt.content;
+        copyBtn.setAttribute('data-prompt', encodeURIComponent(prompt.content));
+        
+        return tempDiv.innerHTML;
+      }).join('');
+      
+      promptList.innerHTML = promptCards;
+    } else {
+      promptList.innerHTML = prompts.map((prompt, index) => 
+        `<div class="prompt-card"><div class="prompt-content">${index + 1}. ${prompt.content}</div></div>`
+      ).join('');
+    }
   }
+}
+
+function jumpToPrompt(promptId) {
+  // Look for prompt with data-prompt-id attribute
+  const targetPrompt = document.querySelector(`[data-prompt-id="${promptId}"]`);
+  if (targetPrompt) {
+    targetPrompt.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Add highlight class
+    targetPrompt.classList.add('prompt-highlight');
+    
+    // Remove highlight after 1 second
+    setTimeout(() => {
+      targetPrompt.classList.remove('prompt-highlight');
+    }, 1000);
+  }
+}
+
+function showCopyToast() {
+  // Remove existing toast if present
+  const existingToast = document.getElementById('prompt-copy-toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+  
+  // Create new toast element
+  const toast = document.createElement('div');
+  toast.id = 'prompt-copy-toast';
+  toast.className = 'prompt-copy-toast';
+  toast.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="20,6 9,17 4,12"></polyline>
+    </svg>
+    Text copied to clipboard!
+  `;
+  
+  document.body.appendChild(toast);
+  
+  // Auto-remove after 3 seconds with slide out animation
+  setTimeout(() => {
+    if (toast && toast.parentNode) {
+      toast.style.animation = 'slideOutDown 0.3s ease-in';
+      setTimeout(() => {
+        if (toast && toast.parentNode) {
+          toast.remove();
+        }
+      }, 300);
+    }
+  }, 3000);
+}
+
+function attachCardListeners() {
+  // Remove existing listeners first to prevent duplicates
+  const existingHandler = window.promptTrackerCardHandler;
+  if (existingHandler) {
+    document.removeEventListener('click', existingHandler);
+  }
+  
+  const cardHandler = (e) => {
+    // Handle copy button click first (prevent event bubbling to card)
+    if (e.target.closest('.copy-btn')) {
+      e.stopPropagation(); // Prevent card click
+      const copyBtn = e.target.closest('.copy-btn');
+      const promptText = decodeURIComponent(copyBtn.dataset.prompt);
+      
+      navigator.clipboard.writeText(promptText).then(() => {
+        showCopyToast();
+      }).catch(err => {
+        // Silently fail for production
+      });
+    } 
+    // Handle card click (but not if copy button was clicked)
+    else if (e.target.closest('.prompt-card')) {
+      const card = e.target.closest('.prompt-card');
+      const promptId = card.dataset.targetPrompt;
+      
+      if (promptId) {
+        jumpToPrompt(promptId);
+      }
+    }
+  };
+  
+  document.addEventListener('click', cardHandler);
+  window.promptTrackerCardHandler = cardHandler; // Store reference for cleanup
 }

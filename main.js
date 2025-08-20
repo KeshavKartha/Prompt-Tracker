@@ -9,9 +9,9 @@
  */
 function loadPromptsFromStorage(convoId) {
   if (!convoId) return;
-  chrome.storage.local.get([convoId], (data) => {
+  chrome.storage.local.get([convoId], async (data) => {
     currentPrompts = data[convoId] || [];
-    updatePromptsDisplay(currentPrompts);
+    await updatePromptsDisplay(currentPrompts);
   });
 }
 
@@ -19,7 +19,7 @@ function loadPromptsFromStorage(convoId) {
  * Scans the CURRENT page for user prompts and updates storage if they change.
  * This function is now simpler and only focuses on the active conversation.
  */
-function checkForNewPrompts() {
+async function checkForNewPrompts() {
   const convoId = getConversationId();
   
   // If we are not in a conversation, do nothing.
@@ -27,7 +27,7 @@ function checkForNewPrompts() {
     // If the UI is not showing the empty state, clear it.
     if (!document.querySelector('#promptList .empty-state')) {
         currentPrompts = [];
-        updatePromptsDisplay([]);
+        await updatePromptsDisplay([]);
     }
     return;
   }
@@ -58,7 +58,7 @@ function checkForNewPrompts() {
   if (JSON.stringify(foundPrompts) !== JSON.stringify(currentPrompts)) {
     currentPrompts = foundPrompts;
     chrome.storage.local.set({ [convoId]: currentPrompts });
-    updatePromptsDisplay(currentPrompts);
+    await updatePromptsDisplay(currentPrompts);
   }
 }
 
@@ -82,7 +82,6 @@ function updateAndCheckForDeletedConversations() {
     // Compare the old set with the new set to find deleted items.
     for (const oldId of knownConversationIds) {
         if (!newIdSet.has(oldId)) {
-            console.log(`Prompt Tracker: Deletion detected for conversation ${oldId}. Cleaning up storage.`);
             chrome.storage.local.remove(oldId);
         }
     }
@@ -119,35 +118,45 @@ function startObservers() {
 /**
  * Main initialization function.
  */
-function initialize() {
-  // Load saved theme
-  chrome.storage.local.get([THEME_STORAGE_KEY], (data) => {
-    const savedTheme = data[THEME_STORAGE_KEY] || 'dark';
+async function initialize() {
+  try {
+    // Load saved theme
+    chrome.storage.local.get([THEME_STORAGE_KEY], async (data) => {
+      const savedTheme = data[THEME_STORAGE_KEY] || 'dark';
 
-    // Inject UI elements
-    injectSidebar();
-    createToggleButton();
-    createThemeToggle();
-
-    // Apply theme
-    applyTheme(savedTheme);
-
-    // Attach event listeners for UI components
-    attachCardListeners();
-    window.addEventListener('resize', () => setTimeout(checkAndApplyResponsiveLogic, 100));
-    document.addEventListener('keydown', (e) => {
-      if ((e.ctrlKey || e.metaKey) && ['+', '-', '0'].includes(e.key)) {
-        setTimeout(checkAndApplyResponsiveLogic, 100);
+      // Initialize the complete UI
+      const uiInitialized = await initializeExtensionUI();
+      if (!uiInitialized) {
+        console.error('Prompt Tracker: UI initialization failed, retrying in 2 seconds...');
+        setTimeout(initialize, 2000);
+        return;
       }
-    });
 
-    // Start observers and run initial checks
-    startObservers();
-    setTimeout(() => {
-        checkForNewPrompts(); // Run once to set the initial state of the sidebar.
-        checkAndApplyResponsiveLogic();
-    }, 1500);
-  });
+      // Apply theme
+      await applyTheme(savedTheme);
+
+      // Attach event listeners for UI components
+      attachCardListeners();
+      window.addEventListener('resize', () => setTimeout(checkAndApplyResponsiveLogic, 100));
+      document.addEventListener('keydown', (e) => {
+        const isModifierKey = e.ctrlKey || e.metaKey;
+        if (isModifierKey && ['+', '-', '0', '='].includes(e.key)) {
+          setTimeout(checkAndApplyResponsiveLogic, 100);
+        }
+      });
+
+      // Start observers and run initial checks
+      startObservers();
+      setTimeout(() => {
+          checkForNewPrompts();
+          checkAndApplyResponsiveLogic();
+      }, 1500);
+    });
+  } catch (error) {
+    console.error('Prompt Tracker: Main initialization failed:', error);
+    // Retry initialization after a delay
+    setTimeout(initialize, 3000);
+  }
 }
 
 /**
@@ -162,7 +171,7 @@ function checkAndApplyResponsiveLogic() {
     const isOpen = sidebar.style.right === "15px";
 
     if (mainContent && mainContent.offsetWidth < 650 && isOpen) {
-        handleToggleSidebar();
+        handleCloseSidebar();
     }
 }
 
