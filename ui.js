@@ -158,7 +158,7 @@ async function handleOpenSidebar() {
     // Remove bounce class after animation completes
     setTimeout(() => {
       sidebar.classList.remove('bounce-in');
-    }, 400);
+    }, 300);
     
     // Show close button with slight delay for better visual flow
     setTimeout(() => {

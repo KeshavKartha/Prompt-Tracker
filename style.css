@@ -196,8 +196,8 @@ body.theme-light #theme-toggle-button {
 }
 
 #prompt-tracker-sidebar.bounce-in {
-    -webkit-animation: sidebarBounceIn 0.4s ease-out;
-    animation: sidebarBounceIn 0.4s ease-out;
+    -webkit-animation: sidebarBounceIn 0.3s ease-out;
+    animation: sidebarBounceIn 0.3s ease-out;
     -webkit-transition: none;
     -o-transition: none;
     transition: none;
