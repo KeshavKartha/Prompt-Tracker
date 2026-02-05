@@ -6,11 +6,11 @@
 // ============================================================================
 // CONFIGURATION - Update these before deployment
 // ============================================================================
-const API_BASE_URL = 'http://localhost:3000/api'; // TODO: Replace with your actual API URL
+const API_BASE_URL = 'https://universal-prompt-tracker.vercel.app/api'; // TODO: Replace with your actual API URL
 
 const ALLOWED_ORIGINS = [
-  'https://your-website.com',   // TODO: Replace with your actual website
-  'http://localhost:3000'       // Dev only - remove in production
+  'https://universal-prompt-tracker.vercel.app',  // Your actual website
+  'http://localhost:3000'       // Keep for dev, or remove in production
 ];
 
 // ============================================================================

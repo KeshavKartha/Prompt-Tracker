@@ -116,12 +116,30 @@ async function createCloseButton() {
 async function createThemeToggle() {
   const existing = document.getElementById("theme-toggle-button");
   if (existing) existing.remove();
-  
+
   const themeToggle = document.createElement("button");
   themeToggle.id = "theme-toggle-button";
   themeToggle.title = "Toggle Theme";
   themeToggle.addEventListener('click', handleThemeToggle);
   document.body.appendChild(themeToggle);
+}
+
+/**
+ * Creates UUID copy button.
+ */
+async function createUUIDCopyButton() {
+  const existing = document.getElementById("uuid-copy-button");
+  if (existing) existing.remove();
+
+  const uuidButton = document.createElement("button");
+  uuidButton.id = "uuid-copy-button";
+  uuidButton.title = "Copy UUID";
+  uuidButton.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+  </svg>`;
+  uuidButton.addEventListener('click', handleUUIDCopy);
+  document.body.appendChild(uuidButton);
 }
 
 /**
@@ -141,18 +159,22 @@ async function handleOpenSidebar() {
     const openButton = document.getElementById("prompt-sidebar-toggle");
     const closeButton = document.getElementById("prompt-sidebar-close");
     const themeToggle = document.getElementById("theme-toggle-button");
-    
+    const uuidButton = document.getElementById("uuid-copy-button");
+
     if (!sidebar || !openButton || !closeButton) return;
-    
+
     // Hide open button
     openButton.classList.add('hidden');
-    
+
     // Trigger bounce animation and show sidebar
     sidebar.classList.add('bounce-in');
     sidebar.style.right = "15px";
     sidebar.style.pointerEvents = "auto";
     if (themeToggle) {
       themeToggle.style.right = '75px';
+    }
+    if (uuidButton) {
+      uuidButton.style.right = '110px';
     }
     
     // Remove bounce class after animation completes
@@ -183,13 +205,17 @@ async function handleCloseSidebar() {
     const openButton = document.getElementById("prompt-sidebar-toggle");
     const closeButton = document.getElementById("prompt-sidebar-close");
     const themeToggle = document.getElementById("theme-toggle-button");
-    
+    const uuidButton = document.getElementById("uuid-copy-button");
+
     if (!sidebar || !openButton || !closeButton) return;
-    
-    // Hide close button and theme toggle
+
+    // Hide close button, theme toggle, and UUID button
     closeButton.classList.remove('visible');
     if (themeToggle) {
       themeToggle.style.right = '-100px';
+    }
+    if (uuidButton) {
+      uuidButton.style.right = '-100px';
     }
     
     // Hide sidebar
@@ -215,6 +241,23 @@ function handleThemeToggle() {
   chrome.storage.local.set({ [THEME_STORAGE_KEY]: newTheme }, () => {
     applyTheme(newTheme);
   });
+}
+
+/**
+ * Handles UUID copy.
+ */
+async function handleUUIDCopy() {
+  try {
+    const uuid = await getUUID();
+    if (uuid) {
+      await navigator.clipboard.writeText(uuid);
+      showCopyToast('UUID copied to clipboard!');
+    } else {
+      showCopyToast('UUID not found. Try reloading.', true);
+    }
+  } catch (err) {
+    showCopyToast('Failed to copy UUID', true);
+  }
 }
 
 /**
@@ -259,8 +302,9 @@ async function initializeExtensionUI() {
   await createToggleButton();
   await createCloseButton();
   await createThemeToggle();
+  await createUUIDCopyButton();
   addClickOutsideHandler();
-  
+
   return true;
 }
 
@@ -338,26 +382,27 @@ function jumpToPrompt(promptId) {
   }
 }
 
-function showCopyToast() {
+function showCopyToast(message = 'Text copied to clipboard!', isError = false) {
   // Remove existing toast if present
   const existingToast = document.getElementById('prompt-copy-toast');
   if (existingToast) {
     existingToast.remove();
   }
-  
+
   // Create new toast element
   const toast = document.createElement('div');
   toast.id = 'prompt-copy-toast';
   toast.className = 'prompt-copy-toast';
-  toast.innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <polyline points="20,6 9,17 4,12"></polyline>
-    </svg>
-    Text copied to clipboard!
-  `;
-  
+  if (isError) toast.classList.add('error');
+
+  const icon = isError
+    ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'
+    : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"></polyline></svg>';
+
+  toast.innerHTML = `${icon}${message}`;
+
   document.body.appendChild(toast);
-  
+
   // Auto-remove after 3 seconds with slide out animation
   setTimeout(() => {
     if (toast && toast.parentNode) {

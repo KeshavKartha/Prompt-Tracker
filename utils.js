@@ -17,6 +17,8 @@ const THEME_STORAGE_KEY = 'promptTrackerTheme';
 // Platform identifiers
 const PLATFORM_CHATGPT = 'chatgpt';
 const PLATFORM_GEMINI = 'gemini';
+const PLATFORM_CLAUDE = 'claude';
+const PLATFORM_PERPLEXITY = 'perplexity';
 
 /**
  * Detects the current platform based on hostname.
@@ -27,12 +29,18 @@ function getCurrentPlatform() {
   if (hostname.includes('gemini.google.com')) {
     return PLATFORM_GEMINI;
   }
+  if (hostname.includes('claude.ai')) {
+    return PLATFORM_CLAUDE;
+  }
+  if (hostname.includes('perplexity.ai')) {
+    return PLATFORM_PERPLEXITY;
+  }
   return PLATFORM_CHATGPT;
 }
 
 /**
  * Extracts the conversation ID from the current URL.
- * Supports both ChatGPT (/c/{id}) and Gemini (/app/{id}) URL patterns.
+ * Supports ChatGPT (/c/{id}), Gemini (/app/{id}), Claude (/chat/{id}), and Perplexity (/search/{id}) URL patterns.
  * @returns {string|null} The conversation ID or null.
  */
 function getConversationId() {
@@ -42,6 +50,18 @@ function getConversationId() {
   if (platform === PLATFORM_GEMINI) {
     // Gemini URL pattern: /app/{conversation_id}
     if (parts.length >= 2 && parts[1] === 'app' && parts[2]) {
+      const id = parts[2];
+      return id && id.length > 5 ? id : null;
+    }
+  } else if (platform === PLATFORM_CLAUDE) {
+    // Claude URL pattern: /chat/{conversation_id}
+    if (parts.length >= 2 && parts[1] === 'chat' && parts[2]) {
+      const id = parts[2];
+      return id && id.length > 5 ? id : null;
+    }
+  } else if (platform === PLATFORM_PERPLEXITY) {
+    // Perplexity URL pattern: /search/{conversation_id} or /page/{id}
+    if (parts.length >= 2 && (parts[1] === 'search' || parts[1] === 'page') && parts[2]) {
       const id = parts[2];
       return id && id.length > 5 ? id : null;
     }
@@ -60,6 +80,8 @@ function getConversationId() {
  * Looks for the active conversation.
  * ChatGPT: uses data-active attribute
  * Gemini: uses 'selected' class
+ * Claude: uses !bg-bg-300 class
+ * Perplexity: uses first 8-9 words of first prompt
  * @returns {string|null} The conversation title or null.
  */
 function getConversationTitle() {
@@ -89,6 +111,24 @@ function getConversationTitle() {
       if (titleDiv && titleDiv.textContent) {
         return titleDiv.textContent.trim();
       }
+    }
+  } else if (platform === PLATFORM_CLAUDE) {
+    // Claude: Find the active conversation link (has !bg-bg-300 class)
+    const activeLink = document.querySelector('a[href^="/chat/"].\\!bg-bg-300');
+    if (activeLink) {
+      // Get title from span.truncate
+      const titleSpan = activeLink.querySelector('span.truncate');
+      if (titleSpan && titleSpan.textContent) {
+        return titleSpan.textContent.trim();
+      }
+    }
+  } else if (platform === PLATFORM_PERPLEXITY) {
+    // Perplexity: Title is first 8-9 words of the first prompt
+    // Find the first user query element (span.select-text)
+    const firstQuery = document.querySelector('span.select-text');
+    if (firstQuery && firstQuery.textContent) {
+      const words = firstQuery.textContent.trim().split(/\s+/).slice(0, 9);
+      return words.join(' ') + (words.length >= 9 ? '...' : '');
     }
   }
 

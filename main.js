@@ -17,7 +17,7 @@ function loadPromptsFromStorage(convoId) {
 
 /**
  * Scans the CURRENT page for user prompts and updates storage if they change.
- * Supports both ChatGPT and Gemini platforms.
+ * Supports ChatGPT, Gemini, Claude, and Perplexity platforms.
  */
 async function checkForNewPrompts() {
   const convoId = getConversationId();
@@ -56,6 +56,44 @@ async function checkForNewPrompts() {
         promptId = generatePromptId();
         query.dataset.promptId = promptId;
         promptIdMap.set(query, promptId);
+      }
+      foundPrompts.push({ id: promptId, content: promptText });
+    }
+  } else if (platform === PLATFORM_CLAUDE) {
+    // Claude: prompts are in divs with data-testid="user-message"
+    const userMessages = document.querySelectorAll('[data-testid="user-message"]');
+    for (const msg of userMessages) {
+      // Extract text from all <p> elements inside, limit to 10 lines
+      const paragraphs = msg.querySelectorAll('p');
+      const lines = [];
+      for (const p of paragraphs) {
+        if (lines.length >= 10) break;
+        const text = p.textContent.trim();
+        if (text) lines.push(text);
+      }
+      const promptText = lines.join('\n');
+      if (!promptText) continue;
+
+      let promptId = msg.dataset.promptId || promptIdMap.get(msg);
+      if (!promptId) {
+        promptId = generatePromptId();
+        msg.dataset.promptId = promptId;
+        promptIdMap.set(msg, promptId);
+      }
+      foundPrompts.push({ id: promptId, content: promptText });
+    }
+  } else if (platform === PLATFORM_PERPLEXITY) {
+    // Perplexity: prompts are in span.select-text elements
+    const queryTexts = document.querySelectorAll('span.select-text');
+    for (const textEl of queryTexts) {
+      const promptText = textEl.innerText.trim();
+      if (!promptText) continue;
+
+      let promptId = textEl.dataset.promptId || promptIdMap.get(textEl);
+      if (!promptId) {
+        promptId = generatePromptId();
+        textEl.dataset.promptId = promptId;
+        promptIdMap.set(textEl, promptId);
       }
       foundPrompts.push({ id: promptId, content: promptText });
     }
