@@ -17,11 +17,11 @@ function loadPromptsFromStorage(convoId) {
 
 /**
  * Scans the CURRENT page for user prompts and updates storage if they change.
- * This function is now simpler and only focuses on the active conversation.
+ * Supports both ChatGPT and Gemini platforms.
  */
 async function checkForNewPrompts() {
   const convoId = getConversationId();
-  
+
   // If we are not in a conversation, do nothing.
   if (!convoId) {
     // If the UI is not showing the empty state, clear it.
@@ -38,26 +38,60 @@ async function checkForNewPrompts() {
     loadPromptsFromStorage(convoId);
     return;
   }
-  
-  // Scan the page for prompt elements.
-  const userMessages = document.querySelectorAll('div[data-message-author-role="user"]');
+
+  const platform = getCurrentPlatform();
   const foundPrompts = [];
-  for (const msg of userMessages) {
-    const promptText = msg.innerText.trim();
-    if (!promptText) continue;
-    let promptId = msg.dataset.promptId || promptIdMap.get(msg);
-    if (!promptId) {
-      promptId = generatePromptId();
-      msg.dataset.promptId = promptId;
-      promptIdMap.set(msg, promptId);
+
+  if (platform === PLATFORM_GEMINI) {
+    // Gemini: prompts are in user-query elements
+    const userQueries = document.querySelectorAll('user-query');
+    for (const query of userQueries) {
+      // Extract text from .query-text or .query-text-line
+      const textEl = query.querySelector('.query-text-line') || query.querySelector('.query-text');
+      const promptText = textEl ? textEl.innerText.trim() : '';
+      if (!promptText) continue;
+
+      let promptId = query.dataset.promptId || promptIdMap.get(query);
+      if (!promptId) {
+        promptId = generatePromptId();
+        query.dataset.promptId = promptId;
+        promptIdMap.set(query, promptId);
+      }
+      foundPrompts.push({ id: promptId, content: promptText });
     }
-    foundPrompts.push({ id: promptId, content: promptText });
+  } else {
+    // ChatGPT: prompts are in divs with data-message-author-role="user"
+    const userMessages = document.querySelectorAll('div[data-message-author-role="user"]');
+    for (const msg of userMessages) {
+      const promptText = msg.innerText.trim();
+      if (!promptText) continue;
+
+      let promptId = msg.dataset.promptId || promptIdMap.get(msg);
+      if (!promptId) {
+        promptId = generatePromptId();
+        msg.dataset.promptId = promptId;
+        promptIdMap.set(msg, promptId);
+      }
+      foundPrompts.push({ id: promptId, content: promptText });
+    }
   }
 
   // Update storage and UI only if prompts have actually changed.
   if (JSON.stringify(foundPrompts) !== JSON.stringify(currentPrompts)) {
     currentPrompts = foundPrompts;
-    chrome.storage.local.set({ [convoId]: currentPrompts });
+    chrome.storage.local.set({ [convoId]: currentPrompts }, () => {
+      // Trigger cloud sync with title
+      const conversationTitle = getConversationTitle();
+      chrome.runtime.sendMessage({
+        type: 'SYNC_CONVERSATION',
+        data: {
+          platform: getCurrentPlatform(),
+          conversationId: convoId,
+          conversationTitle: conversationTitle,
+          prompts: currentPrompts
+        }
+      });
+    });
     await updatePromptsDisplay(currentPrompts);
   }
 }
@@ -66,8 +100,11 @@ async function checkForNewPrompts() {
  * **NEW & ROBUST DELETION LOGIC**
  * Takes a snapshot of the conversation list, compares it to the last known snapshot,
  * and removes any missing (deleted) conversations from storage.
+ * Only applies to ChatGPT (Gemini has a different sidebar structure).
  */
 function updateAndCheckForDeletedConversations() {
+    if (getCurrentPlatform() !== PLATFORM_CHATGPT) return;
+
     const chatLinks = document.querySelectorAll('nav[aria-label="Chat history"] a');
     if (chatLinks.length === 0 && knownConversationIds.size === 0) return; // Nothing to do yet.
 
@@ -82,7 +119,16 @@ function updateAndCheckForDeletedConversations() {
     // Compare the old set with the new set to find deleted items.
     for (const oldId of knownConversationIds) {
         if (!newIdSet.has(oldId)) {
-            chrome.storage.local.remove(oldId);
+            chrome.storage.local.remove(oldId, () => {
+              // Trigger cloud deletion
+              chrome.runtime.sendMessage({
+                type: 'DELETE_CONVERSATION',
+                data: {
+                  platform: PLATFORM_CHATGPT,
+                  conversationId: oldId
+                }
+              });
+            });
         }
     }
 
@@ -92,26 +138,41 @@ function updateAndCheckForDeletedConversations() {
 
 /**
  * Sets up MutationObservers to watch for DOM changes.
+ * Adapts to the current platform (ChatGPT or Gemini).
  */
 function startObservers() {
+  const platform = getCurrentPlatform();
+
   // Observer 1: Watches for new prompts being added.
   const promptObserver = new MutationObserver(() => {
     // Use a shorter debounce for more responsive updates
     clearTimeout(promptObserver.debounce);
     promptObserver.debounce = setTimeout(checkForNewPrompts, 100);
   });
-  
-  // Watch specifically for user message containers for better performance
-  const mainContent = document.querySelector('main') || document.body;
-  promptObserver.observe(mainContent, { 
-    childList: true, 
+
+  // Find the main content container based on platform
+  let mainContent;
+  if (platform === PLATFORM_GEMINI) {
+    mainContent = document.querySelector('chat-window') || document.querySelector('main') || document.body;
+  } else {
+    mainContent = document.querySelector('main') || document.body;
+  }
+
+  promptObserver.observe(mainContent, {
+    childList: true,
     subtree: true,
     attributes: false,
     characterData: false
   });
 
   // Observer 2: Watch for immediate changes in conversation area
-  const conversationContainer = document.querySelector('[role="main"]') || document.querySelector('main');
+  let conversationContainer;
+  if (platform === PLATFORM_GEMINI) {
+    conversationContainer = document.querySelector('chat-window') || document.querySelector('[role="main"]');
+  } else {
+    conversationContainer = document.querySelector('[role="main"]') || document.querySelector('main');
+  }
+
   if (conversationContainer) {
     const conversationObserver = new MutationObserver(() => {
       clearTimeout(conversationObserver.debounce);
@@ -125,16 +186,18 @@ function startObservers() {
     });
   }
 
-  // Observer 3: Watches the chat history list for deletions.
-  const chatListContainer = document.querySelector('nav[aria-label="Chat history"]');
-  if (chatListContainer) {
-    const chatListObserver = new MutationObserver(updateAndCheckForDeletedConversations);
-    chatListObserver.observe(chatListContainer, { childList: true, subtree: true });
-    // Run it once initially to populate our list.
-    updateAndCheckForDeletedConversations();
-  } else {
-    // If the list isn't ready, try again in a moment.
-    setTimeout(startObservers, 1000);
+  // Observer 3: Watches the chat history list for deletions (ChatGPT only).
+  if (platform === PLATFORM_CHATGPT) {
+    const chatListContainer = document.querySelector('nav[aria-label="Chat history"]');
+    if (chatListContainer) {
+      const chatListObserver = new MutationObserver(updateAndCheckForDeletedConversations);
+      chatListObserver.observe(chatListContainer, { childList: true, subtree: true });
+      // Run it once initially to populate our list.
+      updateAndCheckForDeletedConversations();
+    } else {
+      // If the list isn't ready, try again in a moment.
+      setTimeout(startObservers, 1000);
+    }
   }
 }
 
@@ -190,7 +253,14 @@ function checkAndApplyResponsiveLogic() {
     const toggle = document.getElementById('prompt-sidebar-toggle');
     if (!sidebar || !toggle) return;
 
-    const mainContent = document.querySelector('div[class*="react-scroll-to-bottom"]');
+    const platform = getCurrentPlatform();
+    let mainContent;
+    if (platform === PLATFORM_GEMINI) {
+      mainContent = document.querySelector('chat-window') || document.querySelector('[role="main"]');
+    } else {
+      mainContent = document.querySelector('div[class*="react-scroll-to-bottom"]');
+    }
+
     const isOpen = sidebar.style.right === "15px";
 
     if (mainContent && mainContent.offsetWidth < 650 && isOpen) {

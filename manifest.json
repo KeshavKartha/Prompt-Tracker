@@ -1,11 +1,24 @@
 {
     "manifest_version": 3,
     "name": "Prompt Tracker",
-    "version": "1.1.0",
-    "description": "Tracks your prompts within ChatGPT conversations for easy navigation.",
+    "version": "1.2.0",
+    "description": "Tracks your prompts within ChatGPT and Gemini conversations for easy navigation.",
     "permissions": [
-        "storage"
+        "storage",
+        "alarms"
     ],
+    "host_permissions": [
+        "http://localhost:3000/*"
+    ],
+    "background": {
+        "service_worker": "background.js"
+    },
+    "externally_connectable": {
+        "matches": [
+            "https://your-website-domain.com/*",
+            "http://localhost:3000/*"
+        ]
+    },
     "icons": {
         "16": "icons/icon16.png",
         "32": "icons/icon32.png",
@@ -17,7 +30,8 @@
             "resources": ["sidebar.html", "templates.html", "icons.html"],
             "matches": [
                 "https://chatgpt.com/*",
-                "https://chat.openai.com/*"
+                "https://chat.openai.com/*",
+                "https://gemini.google.com/*"
             ]
         }
     ],
@@ -25,7 +39,8 @@
         {
             "matches": [
                 "https://chatgpt.com/*",
-                "https://chat.openai.com/*"
+                "https://chat.openai.com/*",
+                "https://gemini.google.com/*"
             ],
             "css": [
                 "style.css"
